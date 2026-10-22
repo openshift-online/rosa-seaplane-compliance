@@ -1,0 +1,12 @@
+# FedRAMP Class C required Key Security Indicators: the coverage denominator
+# for mappings/*-to-ksi.mapping.yaml (read by scripts/coverage.py).
+#
+# STUB: currently only the change-management KSIs that already appear in our
+# mappings. Populate with the full Class C KSI set from the FedRAMP rules
+# dataset before using this as a real gap view.
+certification: FedRAMP Class C
+target: FEDRAMP-KSI
+version: "2026.10.13.01"
+required:
+  - KSI-CMT-VTD
+  - KSI-CMT-LMC

@@ -12,4 +12,4 @@ cd "${BUNDLE_DIR}"
 conftest push "${REF}"
 
 echo "Published ${REF}"
-echo "Update complytime.yaml's opa_bundle_ref target variable to match if this differs from what's there."
+echo "Update .complytime/complytime.yaml's opa_bundle_ref target variable to match if this differs from what's there."

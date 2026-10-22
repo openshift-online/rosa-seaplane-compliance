@@ -63,7 +63,7 @@ adherence:
           type: Behavioral
           mode: Automated
           required: true
-          description: opa/conftest evaluates recent merges against merge_review.rego.
+          description: opa/conftest evaluates recent merges against github_default_branch_merge_review.rego.
           executor:
             id: opa
             name: opa-provider

@@ -13,4 +13,4 @@ oras push "${REF}" \
   "${SRC_DIR}/policy.yaml:application/vnd.gemara.policy.v1+yaml"
 
 echo "Published ${REF}"
-echo "Update complytime.yaml's policies[].url to match if this differs from what's there."
+echo "Update .complytime/complytime.yaml's policies[].url to match if this differs from what's there."

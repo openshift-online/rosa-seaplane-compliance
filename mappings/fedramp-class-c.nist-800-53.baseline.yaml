@@ -1,0 +1,16 @@
+# NIST SP 800-53 controls required by FedRAMP Class C: the coverage denominator
+# for mappings/*-to-nist.mapping.yaml (read by scripts/coverage.py).
+#
+# STUB: currently only the controls that already appear in our mappings.
+# Populate with the full Class C required set (the union of controls[] across
+# the in-scope KSIs) from the FedRAMP rules dataset before using as a real gap
+# view.
+certification: FedRAMP Class C
+target: NIST-800-53
+version: "2026.10.13.01"
+required:
+  - au-2
+  - cm-3
+  - cm-3.1
+  - cm-3.2
+  - cm-5

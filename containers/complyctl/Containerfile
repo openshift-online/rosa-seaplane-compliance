@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1
 #
 # Builds a self-contained image that can run the whole evidence-collection
-# loop (evidence script -> complyctl get -> complyctl scan -> report) as a
+# loop (evidence script -> complyctl get -> complyctl scan) as a
 # single ECS task. Build from the repo root:
 #
 #   podman build -t rosa-seaplane-compliance -f containers/complyctl/Containerfile .
@@ -42,9 +42,10 @@ RUN go install github.com/complytime/complyctl/cmd/complyctl@latest && \
 #############################################
 FROM registry.access.redhat.com/ubi9/ubi-minimal:latest
 
+COPY requirements.txt /tmp/requirements.txt
 RUN microdnf install -y git ca-certificates jq shadow-utils tar gzip python3 python3-pip && \
     microdnf clean all && \
-    pip3 install --no-cache-dir pyyaml
+    pip3 install --no-cache-dir -r /tmp/requirements.txt
 
 # Non-root, ECS/OpenShift-friendly user. $HOME drives complyctl's default
 # provider directory ($HOME/.local/share/complytime/providers, see
@@ -68,12 +69,13 @@ RUN chmod +x /home/complyctl/.local/share/complytime/providers/complyctl-provide
              /home/complyctl/.local/share/complytime/providers/complyctl-provider-opa
 
 WORKDIR /workspace
-COPY complytime.yaml ./complytime.yaml
+COPY .complytime/complytime.yaml ./.complytime/complytime.yaml
+COPY gemara/ ./gemara/
 COPY evidence/ ./evidence/
 COPY mappings/ ./mappings/
-COPY scripts/report.py ./scripts/report.py
-COPY containers/complyctl/entrypoint.sh /usr/local/bin/entrypoint.sh
-RUN chmod +x /usr/local/bin/entrypoint.sh evidence/collect-merge-evidence.sh evidence/collect-branch-protection-evidence.sh
+COPY scripts/coverage.py ./scripts/coverage.py
+COPY containers/complyctl/entrypoint.py /usr/local/bin/entrypoint.py
+RUN chmod +x /usr/local/bin/entrypoint.py evidence/*.sh
 
 RUN chown -R 1001:0 /workspace /home/complyctl && \
     chmod -R g=u /workspace /home/complyctl
@@ -84,4 +86,4 @@ ENV RSC_EVIDENCE_DIR=/workspace/evidence/output
 ENV RSC_REPO=openshift-online/rosa-seaplane
 ENV RSC_BASE_REF=main
 
-ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
+ENTRYPOINT ["python3", "/usr/local/bin/entrypoint.py"]

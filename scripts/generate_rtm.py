@@ -1,17 +1,10 @@
 #!/usr/bin/env python3
 """Generate a certification-specific Requirements Traceability Matrix (RTM).
 
-One CSV per Gemara MappingDocument, i.e. one per certification. Each row
-states which certification requirement a control satisfies and how it's
-evidenced. Pulled from this repo's own source data; nothing hand-typed.
-
-Deliberately does NOT include a pass/fail result or any per-run evidence
-reference. Those are point-in-time facts that belong in the EvaluationLog /
-OSCAL Assessment Results (which accumulate over time), not in a structural
-document meant to stay stable between scans. An RTM that changed every time
-a scan ran would misrepresent one bad day as if it invalidated the mapping
-itself. See README "One control, many certifications" and "What a real
-audit needs beyond this repo".
+One CSV per Gemara MappingDocument (one per certification). Each row states
+which certification requirement a control satisfies and how it's evidenced,
+from this repo's own source data. Structural and stable between scans: no
+pass/fail result (that lives in the EvaluationLog / coverage report).
 
 Usage:
     python3 scripts/generate_rtm.py \\

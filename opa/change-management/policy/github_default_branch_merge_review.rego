@@ -1,10 +1,10 @@
 # RSC.CMT.CTRL01.AR02: every merge to the default branch must carry a
 # non-author approval and pass required checks. Input: the flattened JSON
-# from evidence/collect-merge-evidence.sh. Package name must match the "id"
+# from evidence/RSC.CMT.CTRL01.AR02.sh. Package name must match the "id"
 # in complytime-mapping.json. Does NOT detect admin-bypass merges, see
 # README "Known gaps".
 
-package rosa_seaplane.change_management.merge_review
+package rosa_seaplane.change_management.github_default_branch_merge_review
 
 deny[msg] {
 	pr := input.pull_requests[_]
@@ -37,7 +37,7 @@ deny[msg] {
 deny[msg] {
 	count(input.pull_requests) == 0
 	msg := sprintf(
-		"no merged pull requests found against %s in the evaluation window, cannot demonstrate the control; verify evidence/collect-merge-evidence.sh ran successfully and GITHUB_TOKEN has read access",
+		"no merged pull requests found against %s in the evaluation window, cannot demonstrate the control; verify evidence/RSC.CMT.CTRL01.AR02.sh ran successfully and GITHUB_TOKEN has read access",
 		[input.base_ref],
 	)
 }

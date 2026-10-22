@@ -1,6 +1,6 @@
 title: ROSA Seaplane Change Management Controls -> FedRAMP KSI
 # Schema: #MappingDocument. Not consumed by complyctl, used by
-# scripts/report.py. KSI values from github.com/FedRAMP/rules dataset
+# scripts/generate_rtm.py and scripts/coverage.py. KSI values from github.com/FedRAMP/rules dataset
 # 2026.10.13.01; re-verify if that's moved on.
 metadata:
   id: RSC.CMT.MAP.KSI
