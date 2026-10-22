@@ -74,7 +74,7 @@ Neither needs an L5 EvaluationLog; both are derived from the authored YAML.
 make validate                  # optional: cue vet the Gemara YAML against upstream schema
 oras login quay.io
 make publish-policy            # push L2 controls + L3 policy as an OCI bundle
-make publish-opa-bundle        # push the Rego bundle for the opa evaluator
+make publish-opa-bundle        # push all domains' Rego as one project bundle (opa evaluator)
 export GITHUB_TOKEN=ghp_...
 make run-local                 # collect evidence, then complyctl scan (the L4 run)
                                #   (or: make build-image && make run-image)
@@ -96,7 +96,7 @@ repo's job is the RTM and running the evaluation, not long-term storage.
   certification-independent (`change-management` is an example domain).
 - `mappings/*.mapping.yaml` one MappingDocument per certification (KSI, NIST 800-53).
 - `mappings/*.baseline.yaml` the required set per certification, read by `coverage.py`.
-- `opa/<domain>/policy/*.rego` the Rego checks for `opa`-evaluated ARs (e.g. `github_default_branch_merge_review.rego` for `RSC.CMT.CTRL01.AR02`).
+- `opa/<domain>/policy/*.rego` the Rego checks for `opa`-evaluated ARs (e.g. `github_default_branch_merge_review.rego` for `RSC.CMT.CTRL01.AR02`), authored per domain but published together as one project bundle.
 - `evidence/<AR-FQDN>.*` one executable collector per AR, named by its AR FQDN (e.g. `RSC.CMT.CTRL01.AR01.sh`), pulling that AR's raw evidence (GitHub via `gh api` today). The entrypoint runs every executable here.
 - `scripts/` `generate_rtm.py`, `coverage.py`, and the `publish-*.sh` helpers.
 - `.complytime/complytime.yaml` complyctl runtime config (policy refs, target, variables).

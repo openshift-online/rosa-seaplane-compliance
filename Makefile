@@ -22,9 +22,9 @@ validate:
 publish-policy:
 	./scripts/publish-policy-bundle.sh $(REGISTRY)/policies/change-management:$(POLICY_VERSION)
 
-## Publish the Rego bundle (+ complytime-mapping.json) for the opa provider.
+## Publish all domains' Rego (+ merged complytime-mapping.json) as one project bundle.
 publish-opa-bundle:
-	./scripts/publish-opa-bundle.sh $(REGISTRY)/opa-bundles/change-management:$(OPA_BUNDLE_VERSION)
+	./scripts/publish-opa-bundle.sh $(REGISTRY)/opa-bundles/rosa-seaplane:$(OPA_BUNDLE_VERSION)
 
 ## Build the ECS-ready container image (requires podman or docker).
 build-image:

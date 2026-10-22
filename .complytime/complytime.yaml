@@ -22,7 +22,7 @@ targets:
 
       # --- opa (evaluator id: opa) -> RSC.CMT.CTRL01.AR02 ---
       # merge-practice check ("did the gate actually hold?")
-      opa_bundle_ref: quay.io/jmelis/rosa-seaplane-compliance/opa-bundles/change-management:v0.1.0
+      opa_bundle_ref: quay.io/jmelis/rosa-seaplane-compliance/opa-bundles/rosa-seaplane:v0.1.0
       # Must be an absolute path; AR02's own evidence subdir so conftest reads
       # only merge evidence (RSC_EVIDENCE_DIR set via entrypoint.py).
       input_path: ${RSC_EVIDENCE_DIR}/RSC.CMT.CTRL01.AR02
