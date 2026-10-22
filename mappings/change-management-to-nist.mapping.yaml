@@ -1,0 +1,55 @@
+title: ROSA Seaplane Change Management Controls -> NIST SP 800-53
+# Schema: #MappingDocument. Control IDs are from KSI-CMT-VTD/LMC's `controls`
+# arrays (FedRAMP dataset 2026.10.13.01); not consumed by complyctl.
+metadata:
+  id: RSC.CMT.MAP.NIST
+  type: MappingDocument
+  gemara-version: "1.0.0"
+  description: Maps RSC.CMT.CTRL01's AR01/AR02 to the NIST 800-53 controls KSI-CMT-VTD/LMC reference.
+  version: 0.1.0
+  author:
+    id: rosa-seaplane-compliance
+    name: ROSA Seaplane Compliance
+    type: Human
+  mapping-references:
+    - id: RSC.CMT.CTRL
+      title: ROSA Seaplane Change Management Control Catalog
+      version: "0.1.0"
+      url: https://github.com/openshift-online/rosa-seaplane-compliance/blob/main/gemara/change-management/controls.yaml
+    - id: NIST-800-53
+      title: NIST SP 800-53 Rev5 (as referenced by FedRAMP KSI-CMT)
+      version: "Rev5"
+      url: https://csrc.nist.gov/projects/risk-management/sp800-53-controls
+
+source-reference:
+  reference-id: RSC.CMT.CTRL
+  entry-type: AssessmentRequirement
+target-reference:
+  reference-id: NIST-800-53
+  entry-type: Control
+
+mappings:
+  - id: RSC.CMT.MAP.NIST.M01
+    source: RSC.CMT.CTRL01.AR01
+    relationship: supports
+    targets:
+      - entry-id: cm-3
+        strength: 5
+        rationale: Enforces configuration change control on the default branch.
+      - entry-id: cm-3.2
+        strength: 7
+        rationale: Required status checks before merge = testing/validation of changes.
+      - entry-id: cm-5
+        strength: 6
+        rationale: Branch protection restricts who may push or merge.
+
+  - id: RSC.CMT.MAP.NIST.M02
+    source: RSC.CMT.CTRL01.AR02
+    relationship: supports
+    targets:
+      - entry-id: au-2
+        strength: 6
+        rationale: The merge/PR history is the logged, auditable change-event record.
+      - entry-id: cm-3.1
+        strength: 5
+        rationale: Automated record of configuration changes via merge history.

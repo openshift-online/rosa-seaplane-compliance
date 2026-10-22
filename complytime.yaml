@@ -1,0 +1,27 @@
+# complyctl runtime config. Both OCI references below must be published
+# first (make publish-policy / make publish-opa-bundle) and must match what
+# you pushed.
+
+policies:
+  - url: quay.io/jmelis/rosa-seaplane-compliance/policies/change-management:v0.1.0
+    id: change-management
+
+targets:
+  - id: rosa-seaplane
+    policies:
+      - change-management
+    variables:
+      # --- ampel (evaluator id: ampel) -> RSC.CMT.CTRL01.AR01 ---
+      # branch-protection configuration check ("is the gate set up?")
+      url: https://github.com/openshift-online/rosa-seaplane
+      # TODO: verify this builtin spec's checks match AR01's exact wording
+      # (`ampel describe builtin:github/branch-rules.yaml`).
+      specs: builtin:github/branch-rules.yaml
+      branches: main
+      access_token: ${GITHUB_TOKEN}
+
+      # --- opa (evaluator id: opa) -> RSC.CMT.CTRL01.AR02 ---
+      # merge-practice check ("did the gate actually hold?")
+      opa_bundle_ref: quay.io/jmelis/rosa-seaplane-compliance/opa-bundles/change-management:v0.1.0
+      # Must be an absolute path; set via RSC_EVIDENCE_DIR (see entrypoint.sh).
+      input_path: ${RSC_EVIDENCE_DIR}

@@ -1,0 +1,47 @@
+title: ROSA Seaplane Change Management Control Catalog
+# Schema: #ControlCatalog (github.com/gemaraproj/gemara), stable layer.
+controls:
+  - id: RSC.CMT.CTRL01
+    title: Reviewed and Validated Changes to the Default Branch
+    group: change-management
+    objective: >
+      Code must not reach the default branch without review and passing
+      checks, in configuration (AR01) and in practice (AR02).
+    assessment-requirements:
+      - id: RSC.CMT.CTRL01.AR01
+        text: >
+          The default branch protection configuration for the repository must
+          require a pull request, at least one approving review, and passing
+          status checks, and must forbid direct pushes and force-pushes.
+        applicability:
+          - github_repositories
+        state: Active
+      - id: RSC.CMT.CTRL01.AR02
+        text: >
+          Every pull request merged to the default branch in the evaluation
+          window must have carried a non-author approving review and passed
+          required status checks.
+        applicability:
+          - github_repositories
+        state: Active
+    state: Active
+groups:
+  - id: change-management
+    title: Change Management
+    description: Reviewed, validated changes to rosa-seaplane repositories (FedRAMP KSI-CMT).
+metadata:
+  id: RSC.CMT.CTRL
+  type: ControlCatalog
+  gemara-version: "1.0.0"
+  description: >
+    Change management controls for ROSA Seaplane. See mappings/ for how
+    RSC.CMT.CTRL01 maps to FedRAMP KSIs and NIST 800-53.
+  version: 0.1.0
+  author:
+    id: rosa-seaplane-compliance
+    name: ROSA Seaplane Compliance
+    type: Human
+  applicability-groups:
+    - id: github_repositories
+      title: GitHub Repositories
+      description: Controls that apply to rosa-seaplane repositories hosted on GitHub.
