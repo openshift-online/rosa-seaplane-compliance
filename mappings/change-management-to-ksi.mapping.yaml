@@ -1,0 +1,50 @@
+title: ROSA Seaplane Change Management Controls -> FedRAMP KSI
+# Schema: #MappingDocument. Not consumed by complyctl, used by
+# scripts/generate_rtm.py and scripts/coverage.py. KSI values from github.com/FedRAMP/rules dataset
+# 2026.10.13.01; re-verify if that's moved on.
+metadata:
+  id: RSC.CMT.MAP.KSI
+  type: MappingDocument
+  gemara-version: "1.0.0"
+  description: Maps RSC.CMT.CTRL01's AR01/AR02 to the FedRAMP KSI-CMT indicators they evidence.
+  version: 0.1.0
+  author:
+    id: rosa-seaplane-compliance
+    name: ROSA Seaplane Compliance
+    type: Human
+  mapping-references:
+    - id: RSC.CMT.CTRL
+      title: ROSA Seaplane Change Management Control Catalog
+      version: "0.1.0"
+      url: https://github.com/openshift-online/rosa-seaplane-compliance/blob/main/gemara/change-management/controls.yaml
+    - id: FEDRAMP-KSI
+      title: "FedRAMP Consolidated Rules: Key Security Indicators"
+      version: "2026.10.13.01"
+      url: https://github.com/FedRAMP/rules
+
+source-reference:
+  reference-id: RSC.CMT.CTRL
+  entry-type: AssessmentRequirement
+target-reference:
+  reference-id: FEDRAMP-KSI
+  entry-type: Statement # closest Gemara EntryType for a KSI indicator
+
+mappings:
+  - id: RSC.CMT.MAP.KSI.M01
+    source: RSC.CMT.CTRL01.AR01
+    relationship: supports
+    targets:
+      - entry-id: KSI-CMT-VTD
+        strength: 6
+        rationale: Required status checks before merge = automated validation of changes.
+
+  - id: RSC.CMT.MAP.KSI.M02
+    source: RSC.CMT.CTRL01.AR02
+    relationship: supports
+    targets:
+      - entry-id: KSI-CMT-VTD
+        strength: 6
+        rationale: Confirms the validation gate held on every real merge, not just in config.
+      - entry-id: KSI-CMT-LMC
+        strength: 7
+        rationale: The per-merge review/status-check trail is the monitored record of modifications.

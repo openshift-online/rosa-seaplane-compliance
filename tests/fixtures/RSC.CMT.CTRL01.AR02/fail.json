@@ -1,0 +1,32 @@
+{
+  "generated_at": "2026-10-01T00:00:00Z",
+  "repository": "openshift-online/rosa-seaplane",
+  "base_ref": "main",
+  "window_days": 30,
+  "pull_requests": [
+    {
+      "number": 301,
+      "merged_at": "2026-09-28T12:00:00Z",
+      "author": "alice",
+      "merged_by": "bob",
+      "review_decision": "REVIEW_REQUIRED",
+      "status_check_state": "SUCCESS"
+    },
+    {
+      "number": 302,
+      "merged_at": "2026-09-29T09:30:00Z",
+      "author": "carol",
+      "merged_by": "carol",
+      "review_decision": "APPROVED",
+      "status_check_state": "SUCCESS"
+    },
+    {
+      "number": 303,
+      "merged_at": "2026-09-30T15:45:00Z",
+      "author": "erin",
+      "merged_by": "frank",
+      "review_decision": "APPROVED",
+      "status_check_state": "FAILURE"
+    }
+  ]
+}

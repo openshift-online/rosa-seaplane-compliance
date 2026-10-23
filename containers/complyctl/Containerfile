@@ -1,0 +1,89 @@
+# syntax=docker/dockerfile:1
+#
+# Builds a self-contained image that can run the whole evidence-collection
+# loop (evidence script -> complyctl get -> complyctl scan) as a
+# single ECS task. Build from the repo root:
+#
+#   podman build -t rosa-seaplane-compliance -f containers/complyctl/Containerfile .
+#
+# Run (needs GITHUB_TOKEN; RSC_EVIDENCE_DIR/RSC_REPO/RSC_BASE_REF have
+# container-friendly defaults set below):
+#
+#   podman run --rm -e GITHUB_TOKEN rosa-seaplane-compliance
+
+#############################################
+# Stage 1: build complyctl + providers + CLI deps
+#############################################
+# UBI9 Go toolset. GOTOOLCHAIN=auto fetches a newer Go at build time if this
+# image's bundled version is older than complyctl/opa-provider need (requires
+# network). Runs as root; this stage is discarded, only the binaries below
+# get copied into the non-root runtime stage.
+FROM registry.access.redhat.com/ubi9/go-toolset:latest AS builder
+USER 0
+
+WORKDIR /build
+ENV CGO_ENABLED=0 GOPATH=/build/go GOTOOLCHAIN=auto
+RUN dnf install -y git && dnf clean all
+
+# complyctl/ampel-provider/opa-provider/gh are unpinned (@latest); pin
+# before producing evidence you'd submit anywhere. snappy/ampel/conftest
+# versions match complyctl's own QUICK_START.md.
+RUN go install github.com/complytime/complyctl/cmd/complyctl@latest && \
+    go install github.com/complytime/complytime-providers/cmd/ampel-provider@latest && \
+    go install github.com/complytime/complytime-providers/cmd/opa-provider@latest && \
+    go install github.com/carabiner-dev/snappy@v0.2.4 && \
+    go install github.com/carabiner-dev/ampel/cmd/ampel@v1.3.1 && \
+    go install github.com/open-policy-agent/conftest@v0.68.2 && \
+    go install github.com/cli/cli/v2/cmd/gh@latest && \
+    go install oras.land/oras/cmd/oras@latest
+
+#############################################
+# Stage 2: runtime
+#############################################
+FROM registry.access.redhat.com/ubi9/ubi-minimal:latest
+
+COPY requirements.txt /tmp/requirements.txt
+RUN microdnf install -y git ca-certificates jq shadow-utils tar gzip python3 python3-pip && \
+    microdnf clean all && \
+    pip3 install --no-cache-dir -r /tmp/requirements.txt
+
+# Non-root, ECS/OpenShift-friendly user. $HOME drives complyctl's default
+# provider directory ($HOME/.local/share/complytime/providers, see
+# complyctl's internal/complytime/consts.go ResolveDataDir/ResolveProviderDir,
+# which fall back to that path when $XDG_DATA_HOME is unset).
+RUN useradd -u 1001 -g 0 -m -d /home/complyctl complyctl
+ENV HOME=/home/complyctl
+ENV PATH="/home/complyctl/.local/share/complytime/providers:/usr/local/bin:${PATH}"
+
+COPY --from=builder /build/go/bin/complyctl /usr/local/bin/complyctl
+COPY --from=builder /build/go/bin/gh /usr/local/bin/gh
+COPY --from=builder /build/go/bin/conftest /usr/local/bin/conftest
+COPY --from=builder /build/go/bin/ampel /usr/local/bin/ampel
+COPY --from=builder /build/go/bin/snappy /usr/local/bin/snappy
+COPY --from=builder /build/go/bin/oras /usr/local/bin/oras
+
+RUN mkdir -p /home/complyctl/.local/share/complytime/providers
+COPY --from=builder /build/go/bin/ampel-provider /home/complyctl/.local/share/complytime/providers/complyctl-provider-ampel
+COPY --from=builder /build/go/bin/opa-provider /home/complyctl/.local/share/complytime/providers/complyctl-provider-opa
+RUN chmod +x /home/complyctl/.local/share/complytime/providers/complyctl-provider-ampel \
+             /home/complyctl/.local/share/complytime/providers/complyctl-provider-opa
+
+WORKDIR /workspace
+COPY .complytime/complytime.yaml ./.complytime/complytime.yaml
+COPY gemara/ ./gemara/
+COPY evidence/ ./evidence/
+COPY mappings/ ./mappings/
+COPY scripts/coverage.py ./scripts/coverage.py
+COPY containers/complyctl/entrypoint.py /usr/local/bin/entrypoint.py
+RUN chmod +x /usr/local/bin/entrypoint.py evidence/*.sh
+
+RUN chown -R 1001:0 /workspace /home/complyctl && \
+    chmod -R g=u /workspace /home/complyctl
+
+USER 1001
+
+ENV RSC_EVIDENCE_DIR=/workspace/evidence/output
+ENV RSC_REPO=openshift-online/rosa-seaplane
+ENV RSC_BASE_REF=main
+
+ENTRYPOINT ["python3", "/usr/local/bin/entrypoint.py"]

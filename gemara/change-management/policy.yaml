@@ -1,0 +1,71 @@
+title: ROSA Seaplane Change Management Policy
+# Schema: #Policy (github.com/gemaraproj/gemara), experimental layer.
+#
+# evaluation-methods[0].executor.id routes each assessment-plan to a
+# provider by evaluator ID (= provider binary name minus
+# "complyctl-provider-"). Must be exactly "ampel" / "opa".
+metadata:
+  id: RSC.CMT.POL01
+  type: Policy
+  gemara-version: "1.0.0"
+  description: Binds RSC.CMT.CTRL to rosa-seaplane; routes AR01 to ampel, AR02 to opa.
+  version: 0.1.0
+  author:
+    id: rosa-seaplane-compliance
+    name: ROSA Seaplane Compliance
+    type: Human
+  mapping-references:
+    - id: RSC.CMT.CTRL
+      title: ROSA Seaplane Change Management Control Catalog
+      version: "0.1.0"
+      url: https://github.com/openshift-online/rosa-seaplane-compliance/blob/main/gemara/change-management/controls.yaml
+
+contacts:
+  responsible:
+    - name: ROSA Seaplane maintainers
+      social: https://github.com/openshift-online/rosa-seaplane
+  accountable:
+    - name: ROSA Seaplane maintainers
+      social: https://github.com/openshift-online/rosa-seaplane
+
+scope:
+  in:
+    technologies:
+      - GitHub
+      - OpenShift Prow
+
+imports:
+  catalogs:
+    - reference-id: RSC.CMT.CTRL
+
+adherence:
+  assessment-plans:
+    - id: RSC.CMT.POL01.AP01
+      requirement-id: RSC.CMT.CTRL01.AR01
+      frequency: daily
+      evaluation-methods:
+        - id: RSC.CMT.POL01.AP01.EM01
+          type: Intent
+          mode: Automated
+          required: true
+          description: ampel checks branch-protection config via builtin:github/branch-rules.yaml.
+          executor:
+            id: ampel
+            name: ampel-provider
+            type: Software
+            uri: https://github.com/complytime/complytime-providers/tree/main/cmd/ampel-provider
+
+    - id: RSC.CMT.POL01.AP02
+      requirement-id: RSC.CMT.CTRL01.AR02
+      frequency: daily
+      evaluation-methods:
+        - id: RSC.CMT.POL01.AP02.EM01
+          type: Behavioral
+          mode: Automated
+          required: true
+          description: opa/conftest evaluates recent merges against github_default_branch_merge_review.rego.
+          executor:
+            id: opa
+            name: opa-provider
+            type: Software
+            uri: https://github.com/complytime/complytime-providers/tree/main/cmd/opa-provider
