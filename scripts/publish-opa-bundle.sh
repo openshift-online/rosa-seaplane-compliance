@@ -17,11 +17,14 @@ mkdir -p "${STAGE}/policy"
 
 shopt -s nullglob
 
-# Collect every domain's Rego, failing loudly on a filename collision.
+# Collect every domain's Rego (excluding unit tests), failing loudly on a
+# filename collision.
 for rego in "${REPO_ROOT}"/opa/*/policy/*.rego; do
-  dest="${STAGE}/policy/$(basename "${rego}")"
+  base="$(basename "${rego}")"
+  case "${base}" in *_test.rego) continue ;; esac
+  dest="${STAGE}/policy/${base}"
   if [[ -e "${dest}" ]]; then
-    echo "ERROR: duplicate Rego filename $(basename "${rego}") across domains; rename one." >&2
+    echo "ERROR: duplicate Rego filename ${base} across domains; rename one." >&2
     exit 1
   fi
   cp "${rego}" "${dest}"

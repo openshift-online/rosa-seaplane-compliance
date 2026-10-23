@@ -6,8 +6,10 @@
 
 package rosa_seaplane.change_management.github_default_branch_merge_review
 
-deny[msg] {
-	pr := input.pull_requests[_]
+import rego.v1
+
+deny contains msg if {
+	some pr in input.pull_requests
 	pr.review_decision != "APPROVED"
 	msg := sprintf(
 		"PR #%d (%s) merged to %s without an approved review (review_decision=%s)",
@@ -15,8 +17,8 @@ deny[msg] {
 	)
 }
 
-deny[msg] {
-	pr := input.pull_requests[_]
+deny contains msg if {
+	some pr in input.pull_requests
 	pr.author == pr.merged_by
 	msg := sprintf(
 		"PR #%d merged to %s by its own author (%s): no non-author approval is possible",
@@ -24,8 +26,8 @@ deny[msg] {
 	)
 }
 
-deny[msg] {
-	pr := input.pull_requests[_]
+deny contains msg if {
+	some pr in input.pull_requests
 	pr.status_check_state != "SUCCESS"
 	msg := sprintf(
 		"PR #%d merged to %s with non-passing status checks (status_check_state=%s)",
@@ -34,7 +36,7 @@ deny[msg] {
 }
 
 # Empty pull_requests would otherwise vacuously "pass" every rule above.
-deny[msg] {
+deny contains msg if {
 	count(input.pull_requests) == 0
 	msg := sprintf(
 		"no merged pull requests found against %s in the evaluation window, cannot demonstrate the control; verify evidence/RSC.CMT.CTRL01.AR02.sh ran successfully and GITHUB_TOKEN has read access",

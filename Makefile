@@ -8,7 +8,7 @@ IMAGE                ?= $(REGISTRY)/complyctl-runner:latest
 # not complyctl itself. Pulled from the CUE Central Registry.
 GEMARA_SCHEMA_VERSION ?= v1.6.0
 
-.PHONY: validate publish-policy publish-opa-bundle build-image run-local run-image doctor coverage coverage-ksi coverage-nist rtm-ksi rtm-nist
+.PHONY: validate test publish-policy publish-opa-bundle build-image run-local run-image doctor coverage coverage-ksi coverage-nist rtm-ksi rtm-nist
 
 ## Validate Gemara YAML against the upstream CUE schema (needs `cue` CLI).
 validate:
@@ -17,6 +17,10 @@ validate:
 	cue vet -c -d '#MappingDocument' github.com/gemaraproj/gemara@$(GEMARA_SCHEMA_VERSION) mappings/change-management-to-ksi.mapping.yaml
 	cue vet -c -d '#MappingDocument' github.com/gemaraproj/gemara@$(GEMARA_SCHEMA_VERSION) mappings/change-management-to-nist.mapping.yaml
 	@echo "All Gemara YAML files are schema-valid."
+
+## Run the policy test suite (Rego unit tests + pass/fail fixtures).
+test:
+	./tests/run.sh
 
 ## Publish the Gemara control catalog + policy as one OCI artifact.
 publish-policy:
