@@ -158,31 +158,96 @@ a token scoped to just this; don't reuse a broad personal token):
 export GITHUB_TOKEN=github_pat_xxxxxxxx
 ```
 
-**7. Publish the bundles to the local registry, then run the full pipeline:**
+**7. Run the pipeline, one command at a time.** Each one below produces a
+real artifact (or none); the command under "explore" lets you look at it
+natively, without any extra tooling beyond what's already installed.
 
+**`make validate`** — optional. No artifact: `cue vet` checks
+`gemara/change-management/{controls,policy}.yaml` and both
+`mappings/*.mapping.yaml` files against the upstream Gemara CUE schema,
+pass/fail to stdout only.
+
+**`make publish-policy`** — pushes `gemara/change-management/{controls,policy}.yaml`
+as one OCI artifact to `localhost:5050/.../policies/change-management:v0.1.0`.
+The artifact lives in the registry, not your filesystem:
 ```bash
-make publish-policy
-make publish-opa-bundle
-make run-local
+oras pull --plain-http localhost:5050/rosa-seaplane-compliance/policies/change-management:v0.1.0 -o /tmp/policy-bundle
+cat /tmp/policy-bundle/controls.yaml
 ```
 
-This collects real evidence from `openshift-online/rosa-seaplane`, runs
-`complyctl scan`, and writes OSCAL/SARIF/Markdown reports to
-`.complytime/scan/`. Expect both `RSC.CMT.CTRL01.AR01` and `AR02` to report
-`❌ Failed` — those are real findings against the real repo, not broken
-tooling (see `make run-local`'s output for the exact reasons).
+**`make publish-opa-bundle`** — same idea, but conftest's own OCI bundle
+format: all `opa/*/policy/*.rego` (minus `_test.rego`) plus the merged
+`complytime-mapping.json`, pushed to `.../opa-bundles/rosa-seaplane:v0.1.0`.
+Pull it back with `conftest`, not `oras`:
+```bash
+conftest pull --tls=false --policy /tmp/opa-bundle "oci://localhost:5050/rosa-seaplane-compliance/opa-bundles/rosa-seaplane:v0.1.0"
+ls /tmp/opa-bundle   # complytime-mapping.json, github_default_branch_merge_review.rego
+```
 
-**8. Push the run to the evidence locker and verify it landed:**
+**`make run-local`** (with `GITHUB_TOKEN` already exported from step 6) —
+the big one. Collects real evidence from
+`openshift-online/rosa-seaplane`, runs `complyctl scan`, and writes four
+artifacts. Expect both `RSC.CMT.CTRL01.AR01` and `AR02` to report `❌
+Failed` — those are real findings against the real repo, not broken tooling
+(see the command's own output for the exact reasons).
 
+- *Raw evidence*, `evidence/output/<AR-FQDN>/evidence.json` — exactly what
+  each `evidence/*.sh` collector wrote from the GitHub API:
+  ```bash
+  jq . evidence/output/RSC.CMT.CTRL01.AR01/evidence.json
+  jq '.pull_requests | length' evidence/output/RSC.CMT.CTRL01.AR02/evidence.json
+  ```
+- *L5 EvaluationLog*, `.complytime/scan/evaluation-log-*.yaml` — Gemara's
+  own result format, one per target:
+  ```bash
+  cat .complytime/scan/evaluation-log-*-opa-*.yaml   # or yq, it's plain YAML
+  ```
+- *OSCAL assessment results*, `.complytime/scan/assessment-results-*.json`
+  — the same data reshaped into NIST OSCAL. Top level is
+  `{"assessment-results": {uuid, metadata, back-matter, results}}`; findings
+  are under `results[].findings`/`results[].observations`:
+  ```bash
+  jq '.["assessment-results"].results[0].findings' .complytime/scan/assessment-results-*-opa-*.json
+  ```
+- *SARIF*, `.complytime/scan/scan-*.sarif.json` — standard SARIF shape, so
+  any SARIF viewer (e.g. VS Code's SARIF extension) opens it directly; by
+  hand:
+  ```bash
+  jq '.runs[0].results[] | {ruleId, level, message: .message.text}' .complytime/scan/scan-*-opa-*.sarif.json
+  ```
+- *Markdown report*, `.complytime/scan/report-*.md` — just `cat`/open it, a
+  formatted human-readable summary of the same scan.
+
+There's also provider-internal state worth poking at:
+`.complytime/ampel/results/*.intoto.json` (the raw in-toto attestation +
+ampel's own eval results) and `.complytime/opa/policy/` (the pulled-and-cached
+Rego bundle — same files as the `conftest pull` above, cached locally by the
+provider).
+
+**`make push-evidence`** — copies everything from the `run-local` step
+(`evidence/output/` + `.complytime/scan/`) into
+`s3://$RSC_S3_BUCKET/$RSC_S3_PREFIX/<run-timestamp>/{evidence,scan}/`:
 ```bash
 export RSC_S3_BUCKET=rosa-seaplane-evidence RSC_S3_ENDPOINT_URL=http://localhost:9090
 make push-evidence
-aws --endpoint-url http://localhost:9090 s3 ls --recursive s3://rosa-seaplane-evidence/
+aws --endpoint-url "$RSC_S3_ENDPOINT_URL" s3 ls --recursive "s3://$RSC_S3_BUCKET/"
+aws --endpoint-url "$RSC_S3_ENDPOINT_URL" s3 cp "s3://$RSC_S3_BUCKET/.../scan/report-...-opa-....md" -   # stream one object without downloading
 ```
 
-You should see the raw `evidence/output/` JSON and every `.complytime/scan/`
-artifact (evaluation logs, OSCAL assessment results, SARIF, Markdown) under
-a timestamped prefix.
+**`make rtm-ksi`** — writes `rtm/change-management-to-ksi.csv` (gitignored,
+regenerated fresh each run) — columns `requirement_id, relationship,
+our_requirement_id, evidence_method, rationale, notes`, one row per
+AR-to-KSI mapping entry:
+```bash
+column -s, -t rtm/change-management-to-ksi.csv | less -S
+```
+(`make rtm-nist` is the same shape for the NIST 800-53 crosswalk, written to
+`rtm/change-management-to-nist.csv`.)
+
+**`make coverage`** — no file artifact. `coverage.py` only prints to stdout
+(unlike `generate_rtm.py`, it takes no `--out`); runs `coverage-ksi` then
+`coverage-nist` back to back. Redirect it yourself if you want to keep a
+copy: `make coverage > /tmp/coverage-$(date +%s).txt`.
 
 ## Where evidence goes
 
