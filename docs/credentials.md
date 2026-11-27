@@ -11,7 +11,11 @@ section when a new evidence source shows up.
 Used by:
 - `evidence/RSC.CMT.CTRL01.AR01.sh` — `gh api repos/{repo}/branches/{branch}/protection`
 - `evidence/RSC.CMT.CTRL01.AR02.sh` — a GraphQL query over merged PRs
-- the `ampel` evaluator's `access_token` target variable (`.complytime/complytime.yaml`)
+
+Both run once per repository in `config/scope.yaml`, so the token must reach
+every one of them, including the private `rosa-seaplane-internal`. A repository
+the token cannot read does not stop the run: it is recorded as an `error` in
+that AR's `manifest.json` and shows up as missing scope in `make coverage`.
 
 Don't reuse your personal `gh auth token` for this — it carries whatever
 scopes your day-to-day admin session has. Create a token scoped to just this
@@ -25,12 +29,21 @@ job instead.
 3. **Resource owner:** `openshift-online` (the org that owns `rosa-seaplane`)
 4. **Expiration:** short-lived (e.g. 90 days) — this is a bot-style
    credential, rotate it rather than making it permanent
-5. **Repository access:** "Only select repositories" → `rosa-seaplane` only
-   (add other repos here only once a collector actually reads from them)
+5. **Repository access:** "Only select repositories" → every repository in
+   `config/scope.yaml`
 6. **Permissions → Repository permissions:**
    - Administration: **Read-only** (branch-protection reads are gated
      behind admin-read, not plain repo read)
    - Pull requests: **Read-only**
+   - Commit statuses: **Read-only** (AR02 reads each merged PR's status checks,
+     `statusCheckRollup` and its contexts; public repositories allow it anonymously, but a
+     private one such as `rosa-seaplane-internal` fails with "Resource not
+     accessible by personal access token" without it). There is no separate
+     "Checks" permission for fine-grained tokens; it exists only for GitHub
+     Apps, so in a private repository only commit statuses (which is what Prow's
+     `ci/prow/*` checks are) can be judged; a required check that is not a commit
+     status is reported as incomplete evidence. If the error persists with Commit statuses granted, the token needs
+     a classic `repo` scope or a GitHub App instead.
    - Metadata: Read-only (auto-included, can't be unchecked)
    - Leave everything else "No access"
 7. Generate, copy the token (`github_pat_...`)
@@ -78,17 +91,62 @@ These `test`/`test` values aren't real secrets — they're s3mock's
 no-op local credentials, fine to keep in a shell history or a local
 `.envrc`. Never do this against real AWS.
 
+## AWS accounts (`RSC_ENV`)
+
+Local runs evaluate one environment, `integration` by default. Switch with
+`make run-local RSC_ENV=stage`: the checks and scope are identical, only the AWS
+accounts differ.
+
+**Access works the way the platform's own dev scripts do** (`rosa-seaplane`
+`scripts/dev/int-env.sh`, `stage-env.sh`), and never reads or writes your
+`~/.aws/config`:
+
+- The account IDs come from the platform's account snapshot,
+  `../rosa-seaplane-internal/infra/accounts/<int|stage>/terragrunt-accounts.json`
+  (clone `rosa-seaplane-internal` as a sibling, or set `RSC_ACCOUNTS_FILE`).
+- `scripts/aws_access.py` writes a **temporary** AWS config from it, logs in with the
+  same SAML helper (`../rosa-seaplane/scripts/dev/cached_saml_credentials_process.py`,
+  run through `uv`; set `RSC_SEAPLANE_REPO` if your checkout lives elsewhere), and
+  deletes the config afterwards. It needs the same Kerberos login those scripts need.
+- `config/environments/<env>.yaml` lists only the logical accounts (`central`,
+  `regional`, `management-mc01`, ...) and where each one's ID sits in the snapshot.
+  **Account IDs are never committed**; a test fails if one appears in any tracked file.
+
+Profiles in the temporary config: `rsc-admin` (SAML login into the control account),
+`rsc-<account>-admin` (admin role in a child account) and `rsc-<account>-ro` (the
+compliance read-only role). The checks use only the `-ro` profiles.
+
+**The read-only role.** `config/aws/compliance-readonly-role.yaml` defines it and
+records every permission with the check that needs it. Until it lives in the
+platform's Terraform, `make aws-role` manages it (admin is needed only for that):
+
+```bash
+make aws-role ACTION=plan                # default: show what would change, writes nothing
+make aws-role ACTION=apply YES=1         # create or update it in every account of RSC_ENV
+make aws-role ACTION=verify              # reads work through the -ro profile, writes are denied
+make aws-role ACTION=delete YES=1
+# optional: ACCOUNT=regional (default: all)
+```
+
+`make env` shows the selected environment and whether each account resolves from the
+snapshot. Never use an admin profile for the checks themselves.
+
+**AWS collectors** (`evidence/*.sh` using `evidence/lib/aws.sh`) re-run themselves inside
+that temporary config, so `make run-local` needs nothing extra beyond the access above,
+and they use only the `rsc-<account>-ro` profiles. The container image does not support
+them yet (no SAML login, no sibling checkouts there).
+
 ## OCI registry — not evidence collection, but part of the pipeline
 
-`make publish-policy` / `make publish-opa-bundle` push the Gemara policy and
-OPA/Rego bundles to `REGISTRY` (`Makefile`). **This defaults to a local-only
+`make publish-policy` / `make publish-complypack` push the Gemara policy and
+the OPA/Rego complypack to `REGISTRY` (`Makefile`). **This defaults to a local-only
 registry, not a public one** — nothing is published anywhere public unless
 you explicitly repoint `REGISTRY` at one and authenticate to it yourself
 (e.g. `podman login your-registry.example.com`). Publishing to a public
 registry is a deliberate, manual action, not something to automate casually.
 
 **Local registry** (the default — start it once, then `make publish-policy`
-and `make publish-opa-bundle` work as-is):
+and `make publish-complypack` work as-is):
 
 ```bash
 podman run -d --name local-oci-registry -p 5050:5000 docker.io/library/registry:2
@@ -96,30 +154,22 @@ podman run -d --name local-oci-registry -p 5050:5000 docker.io/library/registry:
 
 `REGISTRY`'s `http://` prefix is how both publish scripts and
 `.complytime/complytime.yaml` opt into plain-HTTP for this local registry —
-`scripts/publish-policy-bundle.sh`/`publish-opa-bundle.sh` strip it and pass
-`--plain-http`/`--tls=false` to `oras`/`conftest` respectively; complyctl
+`scripts/publish-policy-bundle.sh`/`publish-complypack.sh` strip it and pass
+`--plain-http` to `oras`/`complypack`; complyctl
 itself detects the same prefix on `policies[].url`
 (`internal/registry/client.go`'s `NewClient`) and strips it before building
 the actual OCI reference. There's no `plain-http: true` field on a
 `policies[]` entry — that key belongs to complypack.yaml's schema, not
 complyctl's.
 
-Pulling the opa/Rego bundle has one remaining rough edge: as shipped in
-`complytime-providers` v0.3.0, `opa-provider`'s own `conftest pull` call
-(`constructConftestPullCommand`) has **no way to pass `--tls=false` at
-all** — a real gap, not a configuration problem (pushing is fine; `conftest
-push` has always had the flag). We patched a local `complytime-providers`
-checkout to support the same `http://`-prefix convention as complyctl for
-`opa_bundle_ref`; that patch isn't upstream yet (parked, see
-`project_complypack-upstream-issue-parked.md`-style follow-up). Until it
-merges, running `complyctl scan` against the local registry needs a build of
-`opa-provider` from that patched fork, not the stock release — `complyctl
-get`/publishing work fine with the stock release either way.
+The Rego ships as a complypack, which complyctl itself fetches (with the same
+`http://` handling), so the stock `opa-provider` needs no registry access and
+no patch.
 
 **Pointing at a real registry later:** change `REGISTRY`/`IMAGE_REGISTRY` in
-`Makefile` and the two refs in `.complytime/complytime.yaml` together (drop
-the `http://` prefix for a real TLS registry), then run `make publish-policy`
-/ `make publish-opa-bundle` from an authenticated session.
+`Makefile` (drop the `http://` prefix for a real TLS registry); `make config`
+re-renders `.complytime/complytime.yaml` from it. Then run `make publish-policy`
+/ `make publish-complypack` from an authenticated session.
 
 ## Adding a new evidence source
 

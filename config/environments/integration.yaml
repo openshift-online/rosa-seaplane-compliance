@@ -1,0 +1,53 @@
+# Logical shape of the `integration` environment for local runs: regions and account
+# names only, plus where each account's ID sits in the platform's account snapshot.
+# NEVER put account IDs, ARNs or profile names here (this repo is public).
+#
+# AWS access follows the platform's own dev scripts (rosa-seaplane
+# scripts/dev/*-env.sh): scripts/aws_access.py builds a temporary AWS config from
+# the snapshot in rosa-seaplane-internal and logs in with the same SAML helper. It
+# never reads or writes ~/.aws/config. See docs/credentials.md.
+name: integration
+regions: [us-east-1]
+# Directory under rosa-seaplane-internal/infra/accounts/ holding terragrunt-accounts.json.
+snapshot: int
+# SAML role (suffix after "<central account id>-") that logs in to the control account.
+saml-role: rosa-hyperfleet-int-admin
+accounts:
+  central:
+    snapshot-path: control_account_id
+  regional:
+    snapshot-path: "{region}.rc_account_id"
+  management-mc01:
+    snapshot-path: "{region}.mc_account_ids.mc01"
+
+# How changes reach this environment: the deployment pipelines that apply the default
+# branch of `repository` (the platform repo). Names only, no IDs. Each pipeline is named
+# "<cluster id>-pipeline" by the platform's provisioner (its docs and
+# scripts/provision-cluster-resources.sh), and runs in the account named here (the
+# control account, "central"); the cluster ids come from the environment's
+# deploy/integration/<region>/pipeline-provisioner-inputs/ files.
+#   branch: null means the repository's default branch.
+#   allowed-lag-minutes: how long a merged change may wait before it counts as not
+#     deployed. Merges were observed deploying in about 5 minutes; 120 leaves room for a
+#     failed run to be re-run by a person without the check flagging it at once.
+deployment:
+  repository: openshift-online/rosa-seaplane
+  branch: null
+  allowed-lag-minutes: 120
+  pipelines:
+    - name: regional-pipeline
+      account: central
+    - name: mc01-pipeline
+      account: central
+  # The state of the deployed workloads (their sync and health), read through the platform's
+  # metrics API in `account`; verified live in the regional account. The metrics carry a `cluster` label equal to the
+  # cluster id set by the platform's monitoring values, so `clusters` are those ids. A
+  # workload is judged unhealthy only if it stays so for the whole `lookback-minutes`
+  # (a rollout that is still settling is tolerated); metrics older than `freshness-seconds`
+  # are not trusted. Names only, no IDs.
+  health:
+    account: regional
+    clusters: [regional, mc01]
+    lookback-minutes: 30
+    freshness-seconds: 300
+    step-seconds: 60

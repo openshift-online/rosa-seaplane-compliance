@@ -1,0 +1,24 @@
+{
+  "policy_id": "RSC.CMT.POL01",
+  "requirements": [
+    {
+      "requirement_id": "RSC.CMT.CTRL01.AR01",
+      "control_id": "RSC.CMT.CTRL01",
+      "status": "implemented",
+      "rego_package": "rosa_seaplane.change_management.github_default_branch_protection"
+    },
+    {
+      "requirement_id": "RSC.CMT.CTRL01.AR02",
+      "control_id": "RSC.CMT.CTRL01",
+      "status": "implemented",
+      "rego_package": "rosa_seaplane.change_management.github_default_branch_merge_review"
+    }
+  ],
+  "metrics": {
+    "total_automated": 2,
+    "implemented": 2,
+    "gaps": 0,
+    "coverage_percent": 100
+  },
+  "warnings": []
+}

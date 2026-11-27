@@ -1,0 +1,10 @@
+# Repositories whose controls are evaluated. All under github.com/openshift-online.
+# rosa-seaplane-cli is excluded (paused and archived).
+github-repositories:
+  - openshift-online/rosa-seaplane
+  - openshift-online/rosa-seaplane-api
+  - openshift-online/rosa-seaplane-compliance
+  - openshift-online/rosa-seaplane-ecr-creds-sync
+  - openshift-online/rosa-seaplane-internal
+  - openshift-online/rosa-seaplane-kube-applier
+  - openshift-online/rosa-seaplane-zoa

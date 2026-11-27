@@ -1,0 +1,104 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/rosa-seaplane-compliance/run-record.schema.json",
+  "title": "Run record",
+  "description": "One run of the checks, about ONE UTC day (covers_date: the half-open interval [D 00:00:00Z, D+1 00:00:00Z)), with a result per KSI per automated method (an assessment requirement). Results and counts only: never raw evidence, account IDs, ARNs, emails or event payloads. basis: `event` judges items timestamped inside the day; `state` judges the present at collection time. result: pass = complete, every expected target reached, no violation; fail = at least one violation (wins over error); error = the check could not be judged; not_collected = this method cannot honestly be produced for that day (a backfill cannot reconstruct past state, so it never uses today's state as that day's). neither error nor not_collected is ever a pass.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "run_id", "covers_date", "backfill", "recorded_at", "started_at", "finished_at", "environment", "pipeline", "policy_sha256", "tools", "methods"],
+  "properties": {
+    "schema_version": {"const": 1},
+    "run_id": {"type": "string", "pattern": "^[0-9]{8}T[0-9]{6}Z-[0-9a-f]{6}$"},
+    "covers_date": {"type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$", "description": "The UTC day the record is ABOUT. Distinct from started_at/finished_at, which say when the run happened."},
+    "backfill": {"type": "boolean", "description": "True when the run was explicitly made for a past day (to recover a missed one) rather than for the default day."},
+    "recorded_at": {"$ref": "#/$defs/timestamp"},
+    "started_at": {"$ref": "#/$defs/timestamp"},
+    "finished_at": {"$ref": "#/$defs/timestamp"},
+    "environment": {"type": "string", "pattern": "^[a-z0-9-]+$"},
+    "pipeline": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["commit", "dirty"],
+      "properties": {
+        "commit": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+        "dirty": {"type": "boolean"}
+      }
+    },
+    "policy_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "tools": {"type": "object", "additionalProperties": {"type": "string"}},
+    "methods": {"type": "array", "items": {"$ref": "#/$defs/method"}}
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"backfill": {"const": true}}, "required": ["backfill"]},
+      "then": {
+        "properties": {
+          "methods": {
+            "items": {
+              "if": {"properties": {"basis": {"const": "state"}}, "required": ["basis"]},
+              "then": {"properties": {"result": {"const": "not_collected"}}}
+            }
+          }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "timestamp": {"type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$"},
+    "method": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["ksi", "ar", "method_kind", "basis", "result", "violations", "incomplete", "targets_expected", "targets_reached", "window", "collected_at", "evidence_sha256", "rules_failed"],
+      "properties": {
+        "ksi": {"type": "string", "pattern": "^KSI-[A-Z]+-[A-Z]+$"},
+        "ar": {"type": "string", "pattern": "^[A-Za-z0-9._-]+$"},
+        "method_kind": {"enum": ["intent", "behavioral", "other"]},
+        "basis": {"enum": ["event", "state"]},
+        "result": {"enum": ["pass", "fail", "error", "not_collected"]},
+        "violations": {"type": "integer", "minimum": 0},
+        "incomplete": {"type": "integer", "minimum": 0},
+        "targets_expected": {"type": "integer", "minimum": 0},
+        "targets_reached": {"type": "integer", "minimum": 0},
+        "window": {
+          "oneOf": [
+            {"type": "null"},
+            {"type": "object", "additionalProperties": false, "required": ["start", "end"],
+             "properties": {"start": {"$ref": "#/$defs/timestamp"}, "end": {"$ref": "#/$defs/timestamp"}}}
+          ],
+          "description": "The period of events actually judged (event methods); null for state methods."
+        },
+        "collected_at": {
+          "oneOf": [{"type": "null"}, {"$ref": "#/$defs/timestamp"}],
+          "description": "When a state method looked at the system. Null for event methods, and when nothing was collected."
+        },
+        "evidence_sha256": {"oneOf": [{"type": "null"}, {"type": "string", "pattern": "^[0-9a-f]{64}$"}]},
+        "rules_failed": {
+          "type": "array",
+          "items": {"type": "object", "additionalProperties": false, "required": ["rule", "count"],
+                    "properties": {"rule": {"type": "string", "pattern": "^[a-z0-9][a-z0-9.\\-]*$"}, "count": {"type": "integer", "minimum": 1}}}
+        }
+      },
+      "allOf": [
+        {
+          "if": {"properties": {"result": {"const": "not_collected"}}, "required": ["result"]},
+          "then": {
+            "properties": {
+              "violations": {"const": 0}, "incomplete": {"const": 0},
+              "targets_expected": {"const": 0}, "targets_reached": {"const": 0},
+              "window": {"type": "null"}, "collected_at": {"type": "null"},
+              "evidence_sha256": {"type": "null"}, "rules_failed": {"maxItems": 0}
+            }
+          }
+        },
+        {
+          "if": {"properties": {"basis": {"const": "event"}}, "required": ["basis"]},
+          "then": {"properties": {"collected_at": {"type": "null"}}}
+        },
+        {
+          "if": {"properties": {"basis": {"const": "state"}, "result": {"enum": ["pass", "fail"]}}, "required": ["basis", "result"]},
+          "then": {"properties": {"collected_at": {"type": "string"}}}
+        }
+      ]
+    }
+  }
+}

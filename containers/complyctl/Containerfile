@@ -25,33 +25,12 @@ WORKDIR /build
 ENV CGO_ENABLED=0 GOPATH=/build/go GOTOOLCHAIN=auto
 RUN dnf install -y git && dnf clean all
 
-# complyctl/ampel-provider/opa-provider/gh are unpinned (@latest); pin
-# before producing evidence you'd submit anywhere. snappy/conftest versions
-# match complyctl's own QUICK_START.md.
-#
-# ampel moved from github.com/carabiner-dev/ampel to github.com/policylabs/ampel
-# as of v1.5.0; pin >=1.4.2 (complyctl's ampel-provider's minimum) at the old
-# path or use the new one for anything newer.
-#
-# KNOWN GAP: upstream complytime-providers (as released) has two issues this
-# project's two-evaluator-per-policy setup (ampel for AR01, opa for AR02)
-# hits in practice — tracked for an upstream PR, not yet merged:
-#   1. opa-provider's Generate hard-fails for a target that has neither a
-#      complypack nor an opa_bundle_ref variable, instead of skipping
-#      gracefully like ampel-provider does for its own analogous case.
-#      Blocks any multi-evaluator policy split across targets.
-#   2. opa-provider's `conftest pull` call has no plain-HTTP/insecure-TLS
-#      passthrough at all (unlike complyctl's own policies[].url, which
-#      detects plain-HTTP from an "http://" prefix) — only relevant for
-#      local-registry development, see docs/credentials.md.
-# Until that patch lands, local development needs an opa-provider built from
-# a patched complytime-providers checkout with those two fixes applied.
+# complyctl and gh are unpinned (@latest); pin before producing evidence you'd
+# submit anywhere. opa-provider v0.3.0 is the release verified to work
+# unpatched; conftest version matches complyctl's own QUICK_START.md.
 RUN go install github.com/complytime/complyctl/cmd/complyctl@latest && \
-    go install github.com/complytime/complytime-providers/cmd/ampel-provider@latest && \
-    go install github.com/complytime/complytime-providers/cmd/opa-provider@latest && \
-    go install github.com/carabiner-dev/snappy@v0.2.4 && \
-    go install github.com/policylabs/ampel/cmd/ampel@v1.4.2 && \
-    go install github.com/open-policy-agent/conftest@v0.68.2 && \
+    go install github.com/complytime/complytime-providers/cmd/opa-provider@v0.3.0 && \
+    go install github.com/open-policy-agent/conftest@v0.71.1 && \
     go install github.com/cli/cli/v2/cmd/gh@latest && \
     go install oras.land/oras/cmd/oras@latest
 
@@ -76,23 +55,18 @@ ENV PATH="/home/complyctl/.local/share/complytime/providers:/usr/local/bin:${PAT
 COPY --from=builder /build/go/bin/complyctl /usr/local/bin/complyctl
 COPY --from=builder /build/go/bin/gh /usr/local/bin/gh
 COPY --from=builder /build/go/bin/conftest /usr/local/bin/conftest
-COPY --from=builder /build/go/bin/ampel /usr/local/bin/ampel
-COPY --from=builder /build/go/bin/snappy /usr/local/bin/snappy
 COPY --from=builder /build/go/bin/oras /usr/local/bin/oras
 
 RUN mkdir -p /home/complyctl/.local/share/complytime/providers
-COPY --from=builder /build/go/bin/ampel-provider /home/complyctl/.local/share/complytime/providers/complyctl-provider-ampel
 COPY --from=builder /build/go/bin/opa-provider /home/complyctl/.local/share/complytime/providers/complyctl-provider-opa
-RUN chmod +x /home/complyctl/.local/share/complytime/providers/complyctl-provider-ampel \
-             /home/complyctl/.local/share/complytime/providers/complyctl-provider-opa
+RUN chmod +x /home/complyctl/.local/share/complytime/providers/complyctl-provider-opa
 
 WORKDIR /workspace
 COPY .complytime/complytime.yaml ./.complytime/complytime.yaml
 COPY gemara/ ./gemara/
+COPY config/ ./config/
 COPY evidence/ ./evidence/
-COPY ampel/ ./ampel/
 COPY mappings/ ./mappings/
-COPY scripts/coverage.py ./scripts/coverage.py
 COPY containers/complyctl/entrypoint.py /usr/local/bin/entrypoint.py
 RUN chmod +x /usr/local/bin/entrypoint.py evidence/*.sh
 

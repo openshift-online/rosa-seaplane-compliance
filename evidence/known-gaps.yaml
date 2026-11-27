@@ -1,0 +1,74 @@
+# What each assessment requirement's check cannot see. A passing result means "no problem
+# found within these limits", never "no problem exists". Keyed by AR id; read by
+# scripts/build_findings.py and shown in its report next to the findings.
+#
+# GENERIC STRUCTURAL WORDING ONLY: this repository is public. Describe the check, never the
+# current state of a system (no repository, account or principal names, no PR numbers).
+# Each statement must be true of the collector and policy as written; when one of them
+# changes, change this. RSC.CMT.CTRL02.AR01 also lists, in config/prowler/checks.yaml, what
+# its chosen Prowler checks do not cover (`does-not-cover`); the report adds those itself.
+
+RSC.CMT.CTRL01.AR01:
+  - It checks configuration only. It shows the merge gate is set up and enforced, not that merges respected it (that is RSC.CMT.CTRL01.AR02).
+  - It reads classic branch protection for each repository's default branch. GitHub rulesets are not read, so a gate enforced only through rulesets would look unenforced.
+  - The approval requirement is read from the Prow Tide merge-bot configuration in the platform's configuration repository (repository-level and organization-level files). A gate defined anywhere else is not seen.
+  - A gate counts as enforced on GitHub only if branch protection restricts who may merge or requires the merge bot's own status check. Other mechanisms are not recognised.
+
+RSC.CMT.CTRL01.AR02:
+  - Merges by an administrator who bypasses the merge gate look like ordinary merges. Telling them apart needs the organization audit log, which is not read.
+  - Commits pushed straight to the default branch are not pull requests, so this check cannot see them. The configuration check is what is meant to forbid them.
+  - Only pull requests merged into the default branch on the one UTC day collected (default yesterday, RSC_DATE) are examined. A day with no merge is a complete, empty collection and passes. Pages are read, newest update first, down to the start of the day; collection fails, rather than truncating silently, past 20 pages of 50 merged pull requests, so a day deep in a busy repository's history cannot always be recovered.
+  - Approvals, required checks and the automation exemption's facts are read when the collector runs, not as they were on the day. A backfilled day is judged with today's configuration and a late `/lgtm` counts.
+  - Approval history is read up to 100 comments and 50 reviews per pull request, and labels up to 50. A longer history sets history_truncated, and an approval beyond the cap would be missing from the evidence.
+  - Prow approvals are judged from the labels present now and from commands in comments and review bodies made before the merge. The history of labels being added and removed is not replayed.
+  - The automation exemption's commit check reads up to 100 commits per pull request. A pull request with more cannot meet it.
+  - Only the checks the branch protection requires are judged, on each PR's last commit. The required list is read from the current protection configuration, which may differ from the configuration at the time of the merge.
+  - A repository with no required checks configured, or no branch protection, produces no status-check finding here, because the merge-gate requirement (RSC.CMT.CTRL01.AR01) reports the missing requirement.
+  - Only a success counts as passed for a required check. A check run that concluded neutral or skipped is reported, although GitHub itself lets it satisfy the requirement.
+  - Status contexts are read up to 100 per PR, and up to 4 more pages of 100 (RSC_CONTEXT_PAGES_MAX). A PR with more is reported as incomplete, never as a pass.
+  - In a private repository a fine-grained token cannot read check runs, and GitHub then refuses the per-check connection, so only commit statuses (which is what Prow's ci/prow checks are) are judged. A required check that is not a commit status is then reported as incomplete evidence, not as passing and not as failing.
+  - Checks that finish after the merge cannot have blocked it. A required check still pending on a merged PR is reported, which is also how a check that is never going to report shows up.
+
+RSC.IAM.CTRL01.AR01:
+  - The credential report is a snapshot of when it was generated. A key created and deleted between two runs is never seen.
+  - Only the root user and IAM users are inventoried. Roles, federated identities and other kinds of principal are not.
+  - Only access keys are recorded. Console passwords, MFA devices, SSH keys and service-specific credentials are not.
+  - Only the accounts of the selected environment are examined.
+  - Long-term credentials outside AWS (source-control tokens, cluster service accounts) are outside this check; the KSI is therefore reported as partly implemented.
+
+RSC.IAM.CTRL01.AR02:
+  - Only the one UTC day collected (default yesterday, RSC_DATE; at most 90 days back, what CloudTrail event history keeps) is searched. A day with no key or no event is a complete, empty collection and passes.
+  - the keys checked are those that exist when the collector runs, so a key deleted since the covered day cannot be listed and is not checked
+  - IAM records only the most recent use of a key, so its last-used time can contradict an empty day only when that use fell inside the day
+  - only management events in CloudTrail event history (the last 90 days) are searched; data-plane calls are not
+  - a session started with a key is seen only as the call made with the key, not followed afterwards
+  - Only the regions of the selected environment (always including the one that records global service calls) are searched.
+  - The search for a key stops at its first events, so it shows that a key was used but does not count how often (counts read "at least").
+
+RSC.CMT.CTRL02.AR01:
+  - Prowler's trail checks pass when any trail visible in the account is logging, including an organization-wide trail the account does not own. They do not confirm that the account has a trail of its own.
+  - The verdict on each fact is Prowler's, at the pinned version. A different version may measure a check differently, so the collector refuses any other version.
+
+RSC.CMT.CTRL03.AR01:
+  - only the deployment pipelines of the selected environment are examined; a change deployed some other way is not seen
+  - it shows that the pipeline applied each merged change and finished successfully, not that the deployed system is healthy afterwards (the health of the deployed applications is checked separately, by RSC.CMT.CTRL03.AR02)
+  - a run that failed and was later followed by a successful run of the same or a later commit is recorded as recovered and is not a violation by itself
+  - the pipelines run in superseded mode, so a change can be deployed by a later run that contains it; this is checked with the commit history, for a bounded number of later runs
+  - commits pushed straight to the branch are not pull requests, so only the head of the branch is checked for them
+  - the optional pre-merge end-to-end test is a separate signal and is not measured here
+  - The pipeline itself does not wait for the deployed applications to become healthy. The management pipeline waits for nothing after bootstrapping the deployment tool, and the regional pipeline waits only for the platform API to be live. Whether the applications are healthy afterwards is read separately, from the deployment tool's metrics, by RSC.CMT.CTRL03.AR02.
+  - Execution history is read up to 30 pages of 100 runs and merged pull requests up to 20 pages of 50. Collection is marked incomplete, never silently truncated, past either cap.
+  - A merged change counts as deployed if one of the first three successful runs after it applied it, or applied a commit that contains it. One deployed only by a later run than that is reported as not deployed.
+  - Only the changes merged on the one UTC day collected (default yesterday, RSC_DATE) are examined; a day with no merge passes. Runs are read from the start of that day up to the collection time, since a change merged late is deployed after the day ends.
+  - Time is judged against the collection's own timestamp and an allowed lag set in the environment configuration. A change or head newer than the lag is not judged yet; a backfilled day is judged as of the day it is collected.
+  - The head of the branch and the latest run describe the present, not the covered day, so a backfill does not judge them (config/history/ar-basis.yaml, state_rules).
+  - The applied record is the pipeline's own export. If it is absent on a successful run, that run is taken to have applied its source commit, which the build itself asserts.
+
+RSC.CMT.CTRL03.AR02:
+  - It reads the state the deployment tool reports through the platform's metrics, so it depends on that metrics pipeline and on the API gateway's resource policy; if either changes, collection becomes incomplete, never a pass.
+  - "Only applications the deployment tool itself reports are examined: workloads it does not manage, and anything inside an application's pods, are not seen."
+  - An application is judged unhealthy only if it stayed so for the whole lookback window. A break that began inside the window, or a short outage that ended before the run, is not flagged.
+  - An application seen at fewer than 90% of the window's steps (new, renamed, or with metric gaps) is recorded as partially observed and is not judged.
+  - Metrics older than the freshness limit, an empty result for a cluster, or gaps across the window make the collection incomplete, never a pass.
+  - The regional metrics store only holds clusters that forward their metrics to it.
+  - The state is a point-in-time reading of the last lookback window; a daily run does not see what happened between runs.

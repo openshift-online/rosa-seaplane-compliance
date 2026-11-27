@@ -1,0 +1,74 @@
+{
+  "assessment_requirement": "RSC.CMT.CTRL03.AR02",
+  "generated_at": "2026-11-25T10:00:00Z",
+  "target": "example-cluster",
+  "target_type": "deployment-cluster",
+  "collection": {
+    "complete": true,
+    "source": "deployment-metrics",
+    "window_minutes": 30,
+    "step_seconds": 60,
+    "steps": 31,
+    "freshness_seconds": 300,
+    "newest_sample_age_seconds": 12.5,
+    "window_coverage": 1.0,
+    "applications_gone_in_window": 0,
+    "problems": [],
+    "limitations": [
+      "It reads the state the deployment tool reports through the platform's metrics, so it depends on that metrics pipeline."
+    ],
+    "generated_at": "2026-11-25T10:00:00Z"
+  },
+  "applications": [
+    {
+      "name": "example-ingress",
+      "project": "default",
+      "sync_state": "synced",
+      "health_state": "healthy",
+      "observed_fraction": 1.0,
+      "partially_observed": false,
+      "unhealthy_for_window": false,
+      "stuck_progressing_for_window": false
+    },
+    {
+      "name": "example-monitoring",
+      "project": "default",
+      "sync_state": "synced",
+      "health_state": "healthy",
+      "observed_fraction": 1.0,
+      "partially_observed": false,
+      "unhealthy_for_window": false,
+      "stuck_progressing_for_window": false
+    },
+    {
+      "name": "example-rollout",
+      "project": "default",
+      "sync_state": "synced",
+      "health_state": "progressing",
+      "observed_fraction": 1.0,
+      "partially_observed": false,
+      "unhealthy_for_window": false,
+      "stuck_progressing_for_window": false
+    },
+    {
+      "name": "example-recovered",
+      "project": "default",
+      "sync_state": "out-of-sync",
+      "health_state": "degraded",
+      "observed_fraction": 1.0,
+      "partially_observed": false,
+      "unhealthy_for_window": false,
+      "stuck_progressing_for_window": false
+    },
+    {
+      "name": "example-new",
+      "project": "default",
+      "sync_state": "synced",
+      "health_state": "degraded",
+      "observed_fraction": 0.2,
+      "partially_observed": true,
+      "unhealthy_for_window": false,
+      "stuck_progressing_for_window": false
+    }
+  ]
+}

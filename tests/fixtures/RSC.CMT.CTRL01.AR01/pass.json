@@ -1,7 +1,14 @@
 {
+  "assessment_requirement": "RSC.CMT.CTRL01.AR01",
   "generated_at": "2026-10-01T00:00:00Z",
   "repository": "openshift-online/rosa-seaplane",
   "branch": "main",
+  "protected": true,
+  "approval_gate": {
+    "mechanism": "github-required-reviews",
+    "requires_approval": true,
+    "enforced_on_github": true
+  },
   "protection": {
     "required_pull_request_reviews": {
       "required_approving_review_count": 1,
@@ -10,11 +17,21 @@
     },
     "required_status_checks": {
       "strict": true,
-      "contexts": ["ci/prow"]
+      "contexts": [
+        "ci/prow"
+      ]
     },
-    "enforce_admins": { "enabled": true },
-    "allow_force_pushes": { "enabled": false },
-    "allow_deletions": { "enabled": false },
-    "required_linear_history": { "enabled": true }
+    "enforce_admins": {
+      "enabled": true
+    },
+    "allow_force_pushes": {
+      "enabled": false
+    },
+    "allow_deletions": {
+      "enabled": false
+    },
+    "required_linear_history": {
+      "enabled": true
+    }
   }
 }

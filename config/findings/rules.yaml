@@ -1,0 +1,326 @@
+# One entry per rule id that a Rego `deny` can carry as a trailing "[rule: <id>]"
+# (see opa/*/policy/*.rego), plus the findings the collectors themselves imply.
+# scripts/build_findings.py reads it to turn denial messages into findings. All text
+# is written by people and reviewed like code: nothing here is generated at run time.
+#
+# kind:
+#   violation            the system does not meet the requirement
+#   incomplete-evidence  we could not tell (incomplete collection, cross-check
+#                        mismatch, a check that did not run). Never a pass, and never
+#                        the same thing as a violation.
+# subject: a regex over the message with one named group `subject`, to name what the
+#          finding is about (a PR, a principal, a check). Without a match, the
+#          finding's subject is its target.
+# example: a synthetic message (no real names or IDs) that the pattern must match;
+#          tests/python/test_findings_rules.py checks it.
+#
+# tests/python/test_findings_rules.py fails if a rule id used in a Rego deny is missing
+# here, if an id here is unused, or if a rule lacks a title or a fix hint.
+
+rules:
+  # --- RSC.CMT.CTRL01.AR01: the merge gate, in configuration -----------------
+  merge-gate.no-branch-protection:
+    ar: RSC.CMT.CTRL01.AR01
+    kind: violation
+    title: The default branch has no protection
+    fix: >
+      Protect the default branch: require a pull request, required status checks and an
+      approval before merge, and forbid force-pushes.
+    example: "org/repo: main has no branch protection configured [rule: merge-gate.no-branch-protection]"
+  merge-gate.no-approval-required:
+    ar: RSC.CMT.CTRL01.AR01
+    kind: violation
+    title: No approval is required before merge
+    fix: >
+      Require approval from someone other than the author before merge: GitHub required
+      reviews, or a merge bot (for example Prow Tide) whose merge rules require approval
+      labels for every author.
+    example: "org/repo: no approval is required before merge to main (mechanism=none) [rule: merge-gate.no-approval-required]"
+  merge-gate.approval-not-enforced:
+    ar: RSC.CMT.CTRL01.AR01
+    kind: violation
+    title: The approval requirement is not enforced on GitHub
+    fix: >
+      Make GitHub itself stop a merge that skips the gate: restrict who may merge, or
+      require the merge bot's own status check (for example `tide`) in the branch
+      protection. Until then anyone with write access can merge once CI is green.
+    example: "org/repo: the approval requirement (prow-tide) is not enforced on GitHub for main, so a merge can skip it [rule: merge-gate.approval-not-enforced]"
+  merge-gate.no-required-checks:
+    ar: RSC.CMT.CTRL01.AR01
+    kind: violation
+    title: No required status checks
+    fix: Configure required status checks on the default branch so nothing merges with failing CI.
+    example: "org/repo: required_status_checks is missing, null, or has no contexts on main [rule: merge-gate.no-required-checks]"
+  merge-gate.force-pushes-allowed:
+    ar: RSC.CMT.CTRL01.AR01
+    kind: violation
+    title: Force-pushes to the default branch are allowed
+    fix: Disable force-pushes on the default branch.
+    example: "org/repo: allow_force_pushes.enabled is true (or missing) on main [rule: merge-gate.force-pushes-allowed]"
+  merge-gate.admin-bypass:
+    ar: RSC.CMT.CTRL01.AR01
+    kind: violation
+    title: Administrators can bypass the protection
+    fix: >
+      Enforce the branch protection for administrators, so they cannot bypass reviews and
+      checks with a direct push or merge.
+    example: "org/repo: enforce_admins.enabled is false (or missing) on main, so administrators can bypass the protection [rule: merge-gate.admin-bypass]"
+
+  # --- RSC.CMT.CTRL01.AR02: the merge gate, in practice ----------------------
+  merge-review.no-approval:
+    ar: RSC.CMT.CTRL01.AR02
+    kind: violation
+    title: Merged without a non-author approval
+    subject: '(?P<subject>PR #\d+)'
+    fix: >
+      Require approval from someone other than the author before merge, and make the
+      merge gate mandatory so it cannot be skipped. For a bot-authored change, either have
+      a person approve it, or meet every condition of the documented automation exemption
+      (config/automation.yaml): the message names the conditions that were not met.
+    example: "org/repo: PR #7 (alice) merged to main without a non-author approval [rule: merge-review.no-approval]"
+  merge-review.self-merge:
+    ar: RSC.CMT.CTRL01.AR02
+    kind: violation
+    title: Merged by its own author, bypassing the merge gate
+    subject: '(?P<subject>PR #\d+)'
+    fix: >
+      Do not merge your own pull request by hand. Let the merge bot merge it once it has an
+      independent approval, and restrict manual merges so the gate cannot be skipped.
+    example: "org/repo: PR #7 merged to main by its own author (alice), bypassing the merge gate [rule: merge-review.self-merge]"
+  merge-review.required-check-not-passing:
+    ar: RSC.CMT.CTRL01.AR02
+    kind: violation
+    title: Merged with a required status check not passing
+    subject: '(?P<subject>PR #\d+)'
+    fix: >
+      A check the branch protection requires was not successful on the PR's last commit:
+      failure, still pending, missing (it never reported), or neutral/skipped. Only a
+      success counts: GitHub itself lets neutral and skipped satisfy a required check, but
+      then the check asserted nothing. Find out why the check failed or did not run, and
+      stop merges that skip it by enforcing the protection for administrators and
+      restricting who may merge. The required list is today's configuration, which may
+      differ from the one in force at the time of the merge: a 'missing' result on older PRs
+      may only mean the check did not exist or was not yet required when they merged, so
+      compare the merge date with when the requirement was added. 'Missing' on a recent PR,
+      or on every required check at once, means it was merged before CI reported.
+    example: "org/repo: PR #7 merged to main with required check ci/build not passing (failure) [rule: merge-review.required-check-not-passing]"
+  merge-review.checks-incomplete:
+    ar: RSC.CMT.CTRL01.AR02
+    kind: incomplete-evidence
+    title: The status checks on a merged PR could not all be read
+    subject: '(?P<subject>PR #\d+)'
+    fix: >
+      Either the PR's last commit has more status contexts than the collector reads (raise
+      RSC_CONTEXT_PAGES_MAX and re-run), or the repository's check runs cannot be read with
+      this token, so a required check that is not a commit status cannot be seen (a private
+      repository and a fine-grained token: use a token or app that can read check runs).
+      Either way the PR cannot be judged, which is never read as a pass.
+    example: "org/repo: PR #7 merged to main: the status checks on its last commit could not all be read (more contexts than the collector reads, or check runs are not readable for this repository with the current token), so the required checks cannot be judged [rule: merge-review.checks-incomplete]"
+
+  # --- RSC.CMT.CTRL02.AR01: logging of changes, backed by Prowler ------------
+  change-logging.collection-incomplete:
+    ar: RSC.CMT.CTRL02.AR01
+    kind: incomplete-evidence
+    title: The Prowler collection was incomplete
+    fix: >
+      Re-run the collection and read the collector output: check the pinned Prowler version
+      is installed and the read-only profile can read the account.
+    example: "central: the Prowler collection was incomplete, so nothing can be concluded [rule: change-logging.collection-incomplete]"
+  change-logging.check-no-result:
+    ar: RSC.CMT.CTRL02.AR01
+    kind: incomplete-evidence
+    title: A required check left no result
+    subject: '(?P<subject>\w+) left no result'
+    fix: >
+      Prowler could not assess this check (usually a permission or API error listing the
+      service). Re-run and read the collector output. A check that did not run is never
+      treated as passed.
+    example: "central: cloudtrail_multi_region_enabled left no result, so it cannot be treated as passed [rule: change-logging.check-no-result]"
+  change-logging.check-no-region-result:
+    ar: RSC.CMT.CTRL02.AR01
+    kind: incomplete-evidence
+    title: A required check left no result for a region
+    subject: '(?P<subject>\w+) left no result for region'
+    fix: >
+      Re-run and confirm the read-only profile can read that region. A region with no result
+      is never treated as passed.
+    example: "central: cloudtrail_multi_region_enabled left no result for region us-east-1, so it cannot be treated as passed there [rule: change-logging.check-no-region-result]"
+  change-logging.check-failed:
+    ar: RSC.CMT.CTRL02.AR01
+    kind: violation
+    title: A change-logging check failed
+    subject: '(?P<subject>\w+) failed in'
+    fix: >
+      Fix what the check reports. Make sure a multi-region trail records management events
+      in every region, and create a metric filter and an alarm on changes to the logging
+      itself (creating, updating or deleting a trail, starting or stopping logging) on the
+      log group the trail delivers to, with a notification target.
+    example: "central: cloudwatch_log_metric_filter_and_alarm_for_cloudtrail_configuration_changes_enabled failed in us-east-1 for log-group: No CloudWatch log groups found [rule: change-logging.check-failed]"
+  change-logging.check-not-assessed:
+    ar: RSC.CMT.CTRL02.AR01
+    kind: incomplete-evidence
+    title: A check could not be assessed
+    subject: '(?P<subject>\w+) could not be assessed'
+    fix: >
+      Prowler returned a status other than pass or fail (for example MANUAL because it could
+      not list what it needed). Resolve the cause named in the message, then re-run.
+    example: "central: cloudwatch_log_metric_filter_and_alarm_for_cloudtrail_configuration_changes_enabled could not be assessed in us-east-1 (status MANUAL): could not list [rule: change-logging.check-not-assessed]"
+
+  # --- RSC.IAM.CTRL01.AR01: long-term credentials, in configuration ----------
+  credentials.inventory-incomplete:
+    ar: RSC.IAM.CTRL01.AR01
+    kind: incomplete-evidence
+    title: The credential inventory was incomplete
+    fix: Re-run the collection; the credential report did not complete or could not be read for this account.
+    example: "central: the credential inventory was incomplete, so nothing can be concluded [rule: credentials.inventory-incomplete]"
+  credentials.long-term-active:
+    ar: RSC.IAM.CTRL01.AR01
+    kind: violation
+    title: An account principal holds an active long-term credential
+    subject: '^[^:]+: (?P<subject>\S+ \S+) holds'
+    fix: >
+      Replace the long-term access key with short-lived credentials (a role assumed with
+      temporary credentials, or workload identity federation) and delete the key. Until it is
+      removed this stays a finding.
+    example: "central: iam-user build-bot holds 1 active long-term credential(s) (access-key) [rule: credentials.long-term-active]"
+
+  # --- RSC.IAM.CTRL01.AR02: long-term credentials, in use --------------------
+  credential-use.log-not-searched:
+    ar: RSC.IAM.CTRL01.AR02
+    kind: incomplete-evidence
+    title: The audit log was not fully searched
+    fix: >
+      Re-run the collection: some audit log lookups failed or were throttled. An incomplete
+      search is never read as "no use".
+    example: "central: the audit log was not fully searched (2 lookup error(s)), so nothing can be concluded [rule: credential-use.log-not-searched]"
+  credential-use.log-shows-no-events:
+    ar: RSC.IAM.CTRL01.AR02
+    kind: incomplete-evidence
+    title: The account says a key was used, but the audit log shows nothing
+    subject: '^[^:]+: (?P<subject>\S+ key \.\.\.\w+) was used'
+    fix: >
+      The two sources disagree, so the evidence is inconclusive. Search the other regions and
+      the trail's own log files for this key, and explain the gap before relying on the result.
+    example: "central: build-bot key ...ABCD was used on 2026-11-26 (UTC) per the account, but the audit log shows no events for it [rule: credential-use.log-shows-no-events]"
+  credential-use.region-not-searched:
+    ar: RSC.IAM.CTRL01.AR02
+    kind: incomplete-evidence
+    title: A key was last used in a region that was not searched
+    subject: '^[^:]+: (?P<subject>\S+ key \.\.\.\w+) was last used'
+    fix: Add that region to the environment's regions (config/environments) or check the trail's log files for it, then re-run.
+    example: "central: build-bot key ...ABCD was last used in region eu-west-1, which was not searched [rule: credential-use.region-not-searched]"
+  credential-use.long-term-authentication:
+    ar: RSC.IAM.CTRL01.AR02
+    kind: violation
+    title: A principal authenticated with a long-term credential
+    subject: '^[^:]+: (?P<subject>\S+) authenticated'
+    fix: >
+      Stop using the long-term key: move the workload to short-lived credentials (assume a
+      role), then delete the key. The configuration check lists which keys still exist.
+    example: "central: build-bot authenticated with a long-term credential on 2026-11-26 (UTC) (at least 50 event(s)) [rule: credential-use.long-term-authentication]"
+
+  # --- RSC.CMT.CTRL03.AR01: merged changes are deployed by the pipeline -----
+  deployment.collection-incomplete:
+    ar: RSC.CMT.CTRL03.AR01
+    kind: incomplete-evidence
+    title: The deployment history could not be fully read
+    fix: >
+      Read the reason in the message (a page cap, a record or a comparison that failed). Fix
+      the access and re-run (for a past day, `make daily DATE=<day>`). Until then nothing can be
+      concluded about whether changes reached this environment.
+    example: "example-pipeline: the deployment history could not be fully read (the execution history is longer than 30 pages), so nothing can be concluded [rule: deployment.collection-incomplete]"
+  deployment.change-not-deployed:
+    ar: RSC.CMT.CTRL03.AR01
+    kind: violation
+    title: A merged change was never deployed by a successful run
+    subject: 'change (?P<subject>[0-9a-f]{7}) merged'
+    fix: >
+      Find out why the pipeline never applied it (open the failed or missing run), fix the
+      cause and re-run the pipeline on the current head of the branch: that also deploys the
+      earlier changes the head contains.
+    example: "example-pipeline: change 2222222 merged 2026-11-23T09:00:00Z was not deployed by a successful run (latest attempt: failed) [rule: deployment.change-not-deployed]"
+  deployment.head-not-deployed:
+    ar: RSC.CMT.CTRL03.AR01
+    kind: violation
+    title: The environment is not running the head of the branch
+    subject: 'head of \S+ \((?P<subject>[0-9a-f]{7})'
+    fix: >
+      Re-run the pipeline on the head of the branch and fix whatever made the last run fail or
+      never start. Until it succeeds the environment is running older code than was merged.
+    example: "example-pipeline: the environment is not running the head of main (1111111, committed 2026-11-24T09:00:00Z); latest attempt: failed [rule: deployment.head-not-deployed]"
+  deployment.latest-execution-failed:
+    ar: RSC.CMT.CTRL03.AR01
+    kind: violation
+    title: The latest deployment run failed and was not recovered
+    subject: 'run started (?P<subject>\S+) is'
+    fix: >
+      Open the failed run, fix the cause and re-run it. A failed run that a later successful
+      run recovers is not reported.
+    example: "example-pipeline: the latest deployment run started 2026-11-24T09:30:00Z is failed and no later run recovered it [rule: deployment.latest-execution-failed]"
+  deployment.latest-execution-stuck:
+    ar: RSC.CMT.CTRL03.AR01
+    kind: violation
+    title: The latest deployment run is stuck
+    subject: 'run started (?P<subject>\S+) is'
+    fix: >
+      Open the run and find what it is waiting for. Stop it and start it again if it cannot
+      finish, then confirm the environment reaches the head of the branch.
+    example: "example-pipeline: the latest deployment run started 2026-11-24T09:30:00Z is still in-progress after the allowed lag [rule: deployment.latest-execution-stuck]"
+  deployment.record-contradicts-status:
+    ar: RSC.CMT.CTRL03.AR01
+    kind: violation
+    title: The pipeline's applied record contradicts the run's status
+    subject: 'run started (?P<subject>\S+) is'
+    fix: >
+      The run's status and its own applied record disagree (for example a succeeded run that
+      says it applied nothing, or applied another commit). Inspect that run's Apply step and fix
+      the pipeline, since its record is what the deployment check relies on.
+    example: "example-pipeline: the run started 2026-11-24T09:01:00Z is succeeded but its applied record says otherwise [rule: deployment.record-contradicts-status]"
+
+  # --- RSC.CMT.CTRL03.AR02: deployed applications are synchronized and healthy -----
+  health.collection-incomplete:
+    ar: RSC.CMT.CTRL03.AR02
+    kind: incomplete-evidence
+    title: The state of the deployed applications could not be read reliably
+    fix: >
+      Read the reason in the message: a failed query, metrics older than the freshness limit,
+      gaps across the lookback window, or a cluster that reports no applications. Restore the
+      metrics (the deployment tool's scrape, the forwarding to the regional metrics store, or the
+      API gateway's access policy) and re-run. Until then nothing can be concluded about whether
+      the deployed applications are healthy.
+    example: "example-cluster: the state of the deployed applications could not be read reliably (the newest sample is 900 seconds old, older than the 300 second freshness limit), so nothing can be concluded [rule: health.collection-incomplete]"
+  health.application-unhealthy:
+    ar: RSC.CMT.CTRL03.AR02
+    kind: violation
+    title: An application stayed unhealthy or out of sync for the whole lookback window
+    subject: 'application (?P<subject>\S+) was'
+    fix: >
+      Open the application in the deployment tool, find why it is degraded, missing, or out of
+      sync with its desired state (for example a failing resource, a manual change, or a sync that
+      is blocked) and fix the cause. It is judged unhealthy only if it was never healthy and in
+      sync at any point of the window, so a rollout that settled is not flagged.
+    example: "example-cluster: application example-app was unhealthy for the whole 30-minute window (sync: out-of-sync, health: healthy) [rule: health.application-unhealthy]"
+  health.application-stuck:
+    ar: RSC.CMT.CTRL03.AR02
+    kind: violation
+    title: An application kept progressing without ever settling
+    subject: 'application (?P<subject>\S+) kept'
+    fix: >
+      An application that is still progressing after the whole window is not finishing its
+      rollout (for example a resource whose readiness never completes). Find the resource the
+      deployment tool is waiting on and fix it, or correct the application's health definition
+      if it never reports healthy by design.
+    example: "example-cluster: application example-app kept progressing without ever settling for the whole 30-minute window [rule: health.application-stuck]"
+
+# Findings that come from the collectors' manifests, not from a Rego denial.
+collection-rules:
+  collection.target-not-reached:
+    kind: not-reached
+    title: A target could not be reached by the collector
+    fix: >
+      Read the reason (usually a token or role permission, see docs/credentials.md), fix it and
+      re-run. A target that was not reached is not a pass and not a failure: it is unchecked.
+  collection.no-evidence:
+    kind: not-reached
+    title: No evidence was collected for this requirement
+    fix: Run `make run-local`; the collector for this requirement has not produced evidence yet.

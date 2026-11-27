@@ -1,0 +1,49 @@
+title: ROSA Seaplane Identity and Access Control Catalog
+# Schema: #ControlCatalog (github.com/gemaraproj/gemara), stable layer.
+controls:
+  - id: RSC.IAM.CTRL01
+    title: Non-Human Principals Use No Long-Term Credentials
+    group: identity-access
+    objective: >
+      Services and automation authenticate with short-lived credentials, not
+      long-term keys, in configuration (AR01) and in practice (AR02).
+    assessment-requirements:
+      - id: RSC.IAM.CTRL01.AR01
+        text: >
+          No non-human principal (service or automation identity) in an in-scope
+          account may hold an active long-term credential.
+        applicability:
+          - aws_accounts
+        state: Active
+      - id: RSC.IAM.CTRL01.AR02
+        text: >
+          No non-human principal (service or automation identity) in an in-scope
+          account may have authenticated with a long-term credential on the day
+          evaluated (one UTC day), as far as the account's audit log records. It looks
+          at the credentials that exist and the management events in the log's search
+          window; a credential deleted since that day, or used only for calls the
+          log does not record, is outside what it can see, and the evidence says so.
+        applicability:
+          - aws_accounts
+        state: Active
+    state: Active
+groups:
+  - id: identity-access
+    title: Identity and Access
+    description: Authentication methods for non-human principals in the in-scope accounts.
+metadata:
+  id: RSC.IAM.CTRL
+  type: ControlCatalog
+  gemara-version: "1.0.0"
+  description: >
+    Identity and access controls for ROSA Seaplane. See mappings/ for how
+    RSC.IAM.CTRL01 maps to external frameworks.
+  version: 0.1.0
+  author:
+    id: rosa-seaplane-compliance
+    name: ROSA Seaplane Compliance
+    type: Human
+  applicability-groups:
+    - id: aws_accounts
+      title: AWS Accounts
+      description: Controls that apply to the AWS accounts of an environment (central, regional, management).

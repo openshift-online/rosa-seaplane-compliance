@@ -1,0 +1,24 @@
+{
+  "policy": "RSC.CMT.POL01",
+  "global_evaluation_methods": null,
+  "automated": [
+    {
+      "plan_id": "RSC.CMT.POL01.AP01",
+      "requirement_id": "RSC.CMT.CTRL01.AR01",
+      "evaluation_method": "RSC.CMT.POL01.AP01.EM01",
+      "executor": "opa"
+    },
+    {
+      "plan_id": "RSC.CMT.POL01.AP02",
+      "requirement_id": "RSC.CMT.CTRL01.AR02",
+      "evaluation_method": "RSC.CMT.POL01.AP02.EM01",
+      "executor": "opa"
+    }
+  ],
+  "manual": [],
+  "counts": {
+    "automated": 2,
+    "manual": 0,
+    "total": 2
+  }
+}

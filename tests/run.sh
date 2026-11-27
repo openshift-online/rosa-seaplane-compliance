@@ -3,11 +3,9 @@ set -euo pipefail
 
 # Policy test suite, run through a pinned conftest container so the repo needs
 # no local conftest install. Requires podman or docker.
-#   - Rego unit tests (conftest verify) for RSC.CMT.CTRL01.AR02.
-#   - Pass/fail fixtures run through the real policy (conftest test).
-#   - AR01 (ampel) fixtures run through ampel/policies/RSC.CMT.CTRL01.AR01.json,
-#     if `ampel` is installed locally (no official container image, so this
-#     part is skipped rather than required).
+#   - Rego unit tests (conftest verify) for every assessment requirement.
+#   - Pass/fail fixtures run through the real policy (conftest test), with
+#     every package evaluating every fixture as the opa provider does.
 #
 # Overrides: CONFTEST_IMAGE pins the image; CONFTEST_BIN=conftest uses a local
 # binary instead of the container.
@@ -15,10 +13,14 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "${ROOT}"
 
-OPA_POLICY="opa/change-management/policy"
-AR02_FIX="tests/fixtures/RSC.CMT.CTRL01.AR02"
+# Prefer the local .venv (see requirements.txt) unless PYTHON is set.
+if [[ -z "${PYTHON:-}" && -x .venv/bin/python ]]; then PYTHON=.venv/bin/python; fi
+
+# Every domain's Rego: opa/<domain>/policy.
+POLICY_ARGS=()
+for d in opa/*/policy; do POLICY_ARGS+=(-p "${d}"); done
 # Match the conftest version baked into containers/complyctl/Containerfile.
-CONFTEST_IMAGE="${CONFTEST_IMAGE:-docker.io/openpolicyagent/conftest:v0.68.2}"
+CONFTEST_IMAGE="${CONFTEST_IMAGE:-docker.io/openpolicyagent/conftest:v0.71.1}"
 
 if [[ -n "${CONFTEST_BIN:-}" ]]; then
   conftest() { "${CONFTEST_BIN}" "$@"; }
@@ -35,71 +37,51 @@ else
 fi
 
 echo "== Rego unit tests =="
-conftest verify -p "${OPA_POLICY}"
+conftest verify "${POLICY_ARGS[@]}"
 
 echo
-echo "== AR02 fixture (compliant) must pass =="
-conftest test "${AR02_FIX}/pass.json" -p "${OPA_POLICY}" --all-namespaces
+for fix in tests/fixtures/*/; do
+  AR="$(basename "${fix}")"
+  echo "== ${AR} fixture (compliant) must pass =="
+  conftest test "tests/fixtures/${AR}/pass.json" "${POLICY_ARGS[@]}" --all-namespaces
 
-echo
-echo "== AR02 fixture (violations) must fail =="
-if conftest test "${AR02_FIX}/fail.json" -p "${OPA_POLICY}" --all-namespaces >/dev/null 2>&1; then
-  echo "FAIL: violations fixture was not denied" >&2
-  exit 1
-fi
-echo "OK: violations correctly denied"
-
-echo
-echo "== AR01 (ampel) =="
-AR01_FIX="tests/fixtures/RSC.CMT.CTRL01.AR01"
-AR01_POLICY="ampel/policies/RSC.CMT.CTRL01.AR01.json"
-AR01_TYPE="http://github.com/openshift-online/rosa-seaplane-compliance/ampel/specs/github-branch-protection.yaml"
-DUMMY_HASH="0000000000000000000000000000000000000000000000000000000000000000000000000000"
-DUMMY_HASH="${DUMMY_HASH:0:64}"
-
-if ! command -v ampel >/dev/null 2>&1; then
-  echo "SKIP: ampel not installed locally (no official container image; install from"
-  echo "      github.com/policylabs/ampel to run this part)."
-else
-  # Wraps a fixture's .protection object as the in-toto attestation
-  # ampel/specs/github-branch-protection.yaml's snappy spec would produce,
-  # so the real policy can be exercised without a live GitHub API call.
-  wrap_fixture() {
-    jq --arg type "${AR01_TYPE}" --arg hash "${DUMMY_HASH}" '{
-      "_type": "https://in-toto.io/Statement/v1",
-      "subject": [{"name": "test-subject", "digest": {"sha256": $hash}}],
-      "predicateType": $type,
-      "predicate": {"type": $type, "values": .protection}
-    }' "$1"
-  }
-
-  run_ar01_fixture() {
-    local att results
-    att="$(mktemp)"
-    results="$(mktemp)"
-    wrap_fixture "$1" >"${att}"
-    ampel verify --subject-hash "sha256:${DUMMY_HASH}" \
-      -p "${AR01_POLICY}" -a "${att}" --allow-skip --attest-results \
-      --results-path "${results}" >/dev/null 2>&1
-    local rc=$?
-    rm -f "${att}" "${results}"
-    return $rc
-  }
-
-  echo "-- AR01 fixture (compliant) must pass --"
-  if ! run_ar01_fixture "${AR01_FIX}/pass.json"; then
-    echo "FAIL: compliant fixture did not pass" >&2
-    exit 1
-  fi
-  echo "OK"
-
-  echo "-- AR01 fixture (violations) must fail --"
-  if run_ar01_fixture "${AR01_FIX}/fail.json"; then
-    echo "FAIL: violations fixture was not denied" >&2
+  echo
+  echo "== ${AR} fixture (violations) must fail =="
+  if conftest test "tests/fixtures/${AR}/fail.json" "${POLICY_ARGS[@]}" --all-namespaces >/dev/null 2>&1; then
+    echo "FAIL: ${AR} violations fixture was not denied" >&2
     exit 1
   fi
   echo "OK: violations correctly denied"
+  echo
+done
+
+echo
+echo "== complypack: contract validation and fixture schema checks =="
+if ! command -v complypack >/dev/null 2>&1; then
+  echo "SKIP: complypack not installed (go install github.com/complytime/complypack/cmd/complypack@latest)."
+else
+  # Each Rego file declares its platform schema in a "# platform: <name>"
+  # header and the AR it judges in its `applies` rule.
+  for REGO in opa/*/policy/*.rego; do
+    case "${REGO}" in *_test.rego) continue ;; esac
+    PLATFORM="$(sed -n 's/^# platform: //p' "${REGO}")"
+    AR="$(sed -n 's/.*input\.assessment_requirement == "\(.*\)"$/\1/p' "${REGO}")"
+    if [[ -z "${PLATFORM}" || -z "${AR}" ]]; then
+      echo "FAIL: ${REGO} needs a '# platform:' header and an 'applies' rule on assessment_requirement" >&2
+      exit 1
+    fi
+    SCHEMA="${PLATFORM}=file://${ROOT}/schemas/${PLATFORM}.cue"
+    complypack validate-policy "${REGO}" --platform "${PLATFORM}" --schema "${SCHEMA}" --format text
+    for f in pass fail; do
+      complypack test-policy "${REGO}" --platform "${PLATFORM}" --schema "${SCHEMA}" \
+        --test-data "tests/fixtures/${AR}/${f}.json" --format text
+    done
+  done
 fi
+
+echo
+echo "== Python unit tests =="
+"${PYTHON:-python3}" -I -m unittest discover -s tests/python -p 'test_*.py'
 
 echo
 echo "All implemented tests passed."

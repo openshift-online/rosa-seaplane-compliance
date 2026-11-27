@@ -1,0 +1,46 @@
+{
+  "assessment_requirement": "RSC.CMT.CTRL02.AR01",
+  "generated_at": "2026-10-01T00:00:00Z",
+  "target": "regional",
+  "target_type": "aws_accounts",
+  "collection": {
+    "complete": true,
+    "source": "prowler",
+    "prowler_version": "5.52.0",
+    "required_checks": [
+      "cloudtrail_multi_region_enabled",
+      "cloudtrail_multi_region_enabled_logging_management_events",
+      "cloudwatch_log_metric_filter_and_alarm_for_cloudtrail_configuration_changes_enabled"
+    ],
+    "regions": [
+      "us-east-1"
+    ],
+    "generated_at": "2026-10-01T00:00:00Z"
+  },
+  "findings": [
+    {
+      "check_id": "cloudtrail_multi_region_enabled",
+      "status": "PASS",
+      "region": "us-east-1",
+      "resource_type": "AwsCloudTrailTrail",
+      "resource_name": "example-trail",
+      "detail": "Trail example-trail is multiregion and it is logging."
+    },
+    {
+      "check_id": "cloudtrail_multi_region_enabled_logging_management_events",
+      "status": "PASS",
+      "region": "us-east-1",
+      "resource_type": "AwsCloudTrailTrail",
+      "resource_name": "example-trail",
+      "detail": "Trail example-trail from home region us-east-1 is multi-region, is logging and have management events enabled."
+    },
+    {
+      "check_id": "cloudwatch_log_metric_filter_and_alarm_for_cloudtrail_configuration_changes_enabled",
+      "status": "PASS",
+      "region": "us-east-1",
+      "resource_type": "AwsLogsLogGroup",
+      "resource_name": "example-logs",
+      "detail": "CloudWatch log group example-logs found with metric filter example-filter and alarms set."
+    }
+  ]
+}

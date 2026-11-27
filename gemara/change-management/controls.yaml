@@ -10,32 +10,86 @@ controls:
     assessment-requirements:
       - id: RSC.CMT.CTRL01.AR01
         text: >
-          The default branch protection configuration for the repository must
-          require a pull request, at least one approving review, and passing
-          status checks, and must forbid direct pushes and force-pushes.
+          The repository's merge gate for the default branch must require a
+          pull request, approval from someone other than the author, and
+          passing status checks; that gate must be enforced so that it cannot
+          be bypassed, including by administrators; and direct pushes and
+          force-pushes must be forbidden.
         applicability:
           - github_repositories
         state: Active
       - id: RSC.CMT.CTRL01.AR02
         text: >
-          Every pull request merged to the default branch in the evaluation
-          window must have carried a non-author approving review and passed
-          required status checks.
+          Every pull request merged to the default branch on the day evaluated
+          (one UTC day) must have carried a non-author approval and passed
+          required status checks. A day with no merge has nothing to review.
         applicability:
           - github_repositories
+        state: Active
+    state: Active
+  - id: RSC.CMT.CTRL02
+    title: Changes to the Cloud Environment Are Logged and Monitored
+    group: change-management
+    objective: >
+      Modifications to the cloud environment leave an audit record, and
+      someone is alerted if that logging is stopped or altered.
+    assessment-requirements:
+      - id: RSC.CMT.CTRL02.AR01
+        text: >
+          In every in-scope account, an audit log must record the modifications
+          made to the cloud environment in each region checked, and an alert must
+          exist for the logging itself being stopped or altered. It confirms that
+          the logging and the alert are configured; it does not cover alerts on
+          other kinds of change or whether anyone responds, and the evidence
+          states what was checked.
+        applicability:
+          - aws_accounts
+        state: Active
+    state: Active
+  - id: RSC.CMT.CTRL03
+    title: Merged Changes Are Deployed by Automation
+    group: change-management
+    objective: >
+      A change that has been reviewed and merged reaches the environment through the
+      automated deployment pipeline, the deployment succeeds, and the deployed
+      applications become and stay healthy.
+    assessment-requirements:
+      - id: RSC.CMT.CTRL03.AR01
+        text: >
+          Every change merged to the default branch on the day evaluated (one UTC
+          day) must have been deployed to the environment by the automated deployment
+          pipeline, the deployment must have succeeded, and the environment must be
+          running the head of the default branch, allowing a short delay for the
+          deployment itself. It confirms that deployments were applied and finished
+          successfully; it does not confirm that the deployed system is healthy
+          afterwards (that is RSC.CMT.CTRL03.AR02), and the evidence states what was
+          checked.
+        applicability:
+          - deployment_pipelines
+        state: Active
+      - id: RSC.CMT.CTRL03.AR02
+        text: >
+          After a deployment, the applications that make up the environment must be
+          synchronized with their desired state and healthy. A state that is transient
+          while a rollout settles is tolerated; an application that stays unhealthy,
+          or never finishes settling, for the whole lookback window is not. The state
+          is read from the metrics the deployment tool reports, and is trusted only
+          when it is recent and complete; the evidence states what was checked.
+        applicability:
+          - deployment_clusters
         state: Active
     state: Active
 groups:
   - id: change-management
     title: Change Management
-    description: Reviewed, validated changes to rosa-seaplane repositories (FedRAMP KSI-CMT).
+    description: Reviewed, validated, logged and monitored changes to ROSA Seaplane.
 metadata:
   id: RSC.CMT.CTRL
   type: ControlCatalog
   gemara-version: "1.0.0"
   description: >
     Change management controls for ROSA Seaplane. See mappings/ for how
-    RSC.CMT.CTRL01 maps to FedRAMP KSIs and NIST 800-53.
+    RSC.CMT.CTRL01 maps to external frameworks.
   version: 0.1.0
   author:
     id: rosa-seaplane-compliance
@@ -45,3 +99,12 @@ metadata:
     - id: github_repositories
       title: GitHub Repositories
       description: Controls that apply to rosa-seaplane repositories hosted on GitHub.
+    - id: aws_accounts
+      title: AWS Accounts
+      description: Controls that apply to the AWS accounts of an environment (central, regional, management).
+    - id: deployment_pipelines
+      title: Deployment Pipelines
+      description: Controls that apply to the automated deployment pipelines of an environment.
+    - id: deployment_clusters
+      title: Deployment Clusters
+      description: Controls that apply to the clusters an environment is deployed to, and the applications running on them.

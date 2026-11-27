@@ -1,0 +1,91 @@
+{
+  "assessment_requirement": "RSC.CMT.CTRL03.AR01",
+  "generated_at": "2026-10-01T12:00:00Z",
+  "target": "regional-pipeline",
+  "target_type": "deployment-pipeline",
+  "repository": "example-org/platform",
+  "branch": "main",
+  "covers_date": "2026-09-30",
+  "window": {
+    "start": "2026-09-30T00:00:00Z",
+    "end": "2026-10-01T00:00:00Z"
+  },
+  "collection": {
+    "complete": true,
+    "source": "codepipeline-executions+github",
+    "allowed_lag_minutes": 120,
+    "regions": [
+      "us-east-1"
+    ],
+    "executions_read": 3,
+    "changes_checked": 2,
+    "comparisons": 1,
+    "problems": [],
+    "limitations": [
+      "example limitation"
+    ],
+    "generated_at": "2026-10-01T12:00:00Z"
+  },
+  "head": {
+    "sha": "1111111111111111111111111111111111111111",
+    "committed_at": "2026-10-01T08:00:00Z",
+    "deployed": true,
+    "deployed_by": "applied-itself",
+    "deployed_by_execution_status": "succeeded"
+  },
+  "latest_execution": {
+    "commit": "1111111111111111111111111111111111111111",
+    "status": "succeeded",
+    "trigger": "webhook",
+    "started": "2026-10-01T08:01:00Z",
+    "finished": "2026-10-01T08:01:00Z",
+    "applied": true,
+    "applied_sha": "1111111111111111111111111111111111111111"
+  },
+  "executions": [
+    {
+      "commit": "1111111111111111111111111111111111111111",
+      "status": "succeeded",
+      "trigger": "webhook",
+      "started": "2026-10-01T08:01:00Z",
+      "finished": "2026-10-01T08:01:00Z",
+      "applied": true,
+      "applied_sha": "1111111111111111111111111111111111111111"
+    },
+    {
+      "commit": "3333333333333333333333333333333333333333",
+      "status": "failed",
+      "trigger": "webhook",
+      "started": "2026-09-30T09:01:00Z",
+      "finished": "2026-09-30T09:01:00Z",
+      "applied": null,
+      "applied_sha": null,
+      "recovered": true
+    },
+    {
+      "commit": "2222222222222222222222222222222222222222",
+      "status": "succeeded",
+      "trigger": "webhook",
+      "started": "2026-09-30T08:01:00Z",
+      "finished": "2026-09-30T08:01:00Z",
+      "applied": true,
+      "applied_sha": "2222222222222222222222222222222222222222"
+    }
+  ],
+  "merged_commits": [
+    {
+      "sha": "2222222222222222222222222222222222222222",
+      "merged_at": "2026-09-30T08:00:00Z",
+      "deployed": true,
+      "deployed_by": "applied-itself",
+      "deployed_by_execution_status": "succeeded"
+    },
+    {
+      "sha": "3333333333333333333333333333333333333333",
+      "merged_at": "2026-09-30T09:00:00Z",
+      "deployed": true,
+      "deployed_by": "contained-in-later",
+      "deployed_by_execution_status": "succeeded"
+    }
+  ]
+}

@@ -2,8 +2,24 @@
   "version": "1",
   "mappings": [
     {
+      "id": "rosa_seaplane.change_management.github_default_branch_protection",
+      "requirement_id": "RSC.CMT.CTRL01.AR01"
+    },
+    {
       "id": "rosa_seaplane.change_management.github_default_branch_merge_review",
       "requirement_id": "RSC.CMT.CTRL01.AR02"
+    },
+    {
+      "id": "rosa_seaplane.change_management.prowler_account_change_logging",
+      "requirement_id": "RSC.CMT.CTRL02.AR01"
+    },
+    {
+      "id": "rosa_seaplane.change_management.deployment_applied",
+      "requirement_id": "RSC.CMT.CTRL03.AR01"
+    },
+    {
+      "id": "rosa_seaplane.change_management.deployment_workloads_healthy",
+      "requirement_id": "RSC.CMT.CTRL03.AR02"
     }
   ]
 }

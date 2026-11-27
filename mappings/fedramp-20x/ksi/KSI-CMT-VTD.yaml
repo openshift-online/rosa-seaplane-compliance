@@ -1,0 +1,67 @@
+# KSI record for KSI-CMT-VTD: the hand-written input to the SDR that cannot be derived
+# from the mappings, policy or scan results. Written by the engineer who implements
+# the KSI's checks, in the same PR, and reviewed by a person.
+#
+# PROPOSED: the text below was drafted by a model and is not yet reviewed. Each field
+# starts with "[Proposed, pending review]"; a person must read it against what is
+# implemented, edit it, and remove the marker, because assessors check that what is
+# documented matches what runs.
+#
+# Scope: validation after the merge is measured twice: that the pipeline applied the
+# change and finished successfully, and that the deployed applications are synchronized
+# and healthy afterwards (read from the deployment tool's metrics, judged over a lookback
+# window). The optional pre-merge end-to-end test is a separate signal and is not
+# measured. Both what is and is not covered are recorded in evidence/known-gaps.yaml.
+ksi: KSI-CMT-VTD
+target-types: [github-repository, deployment-pipeline, deployment-cluster]
+measures: >
+  [Proposed, pending review] Three measures are taken. Configuration: for each
+  in-scope repository, the merge gate for the default branch is read, that is, whether
+  a pull request, approval from someone other than the author and passing status
+  checks are required, whether that gate is enforced so it cannot be bypassed
+  (including by administrators), and whether force-pushes are forbidden; the approval
+  requirement is read from GitHub's required reviews or from the merge bot's rules.
+  Behavior at merge: every pull request merged on the day evaluated (one UTC day, by
+  default yesterday; each daily run adds that day to the history) is checked for a non-author approval and passing status checks, with the
+  approval established from GitHub reviews and from the merge bot's approval commands.
+  Behavior after the merge, in two parts. First, for each of the environment's
+  deployment pipelines, every change merged on the day is checked to have been
+  applied by a successful run of the pipeline (directly, or by a later run that
+  contains it), and the environment is checked to be running the head of the default
+  branch within an allowed delay. Second, for each cluster, the applications that make
+  up the environment are checked to be synchronized with their desired state and
+  healthy, using the state the deployment tool reports through the platform's metrics:
+  an application that stayed unhealthy or out of sync, or never finished settling, for
+  the whole lookback window (30 minutes by default) is reported, while a state that
+  cleared inside the window is tolerated. Not measured: the optional pre-merge
+  end-to-end test.
+automation-verification: >
+  [Proposed, pending review] No human step is involved: collectors read GitHub, the
+  merge bot's configuration and the deployment pipeline's own execution records and
+  applied-commit output through read-only access, and policies evaluate the normalized
+  evidence. Each is accurate for what it measures because the sources are the systems'
+  own records, the policies have unit tests and passing and failing fixtures, and
+  anything that stops a collection from covering its window (a target that could not be
+  reached, a page cap, a record that could not be read) makes the result incomplete,
+  which is reported and never read as a pass. For the health measure, metrics that are
+  stale, missing or have gaps make the result incomplete, never healthy. They are not
+  sufficient on their own: a merge made by an administrator who bypasses the gate looks
+  like an ordinary merge, and an application that broke inside the lookback window, or
+  between daily runs, is not seen.
+validation: >
+  [Proposed, pending review] The measures are validated by tests that must deny a
+  gate that is missing or not enforced, a merge without a non-author approval, a change
+  that was never deployed, a failed or stuck deployment, a contradictory applied
+  record, an application unhealthy or never settling for the whole window and metrics
+  that cannot be trusted, and accept the healthy cases (including a state that cleared
+  inside the window), by the pipeline's own build asserting that the
+  commit it applied equals the commit it was given, and by being able to reproduce any
+  reported finding from the collected evidence files. Cadence is planned daily and is
+  currently run manually from a developer laptop.
+# A related control is "addressed" when one of the KSI's ARs maps to it, and
+# "open" unless decided here. Each decision needs a rationale:
+#   control-decisions:
+#     si-2:
+#       decision: not-applicable   # or: inherited
+#       rationale: Why this control does not apply to this KSI.
+control-decisions: {}

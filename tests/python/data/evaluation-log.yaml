@@ -1,0 +1,21 @@
+# Shape of a real complyctl L5 log, with the sensitive parts it really carries
+# (local paths, a username in the message) so tests can prove they are dropped.
+metadata:
+  id: example/policies/change-management
+  type: EvaluationLog
+result: Failed
+evaluations:
+- name: RSC.CMT.CTRL01
+  result: Failed
+  assessment-logs:
+  - requirement: {reference-id: x, entry-id: RSC.CMT.CTRL01.AR01}
+    result: Failed
+    message: "org/a: PR #1 (alice) merged by alice"
+    start: "2026-11-24T09:29:26+01:00"
+    steps: [/Users/someone/work/git/repo/evidence/output]
+    evidence:
+    - source: {coordinate: /Users/someone/work/git/repo/evidence/output}
+  - requirement: {reference-id: x, entry-id: RSC.CMT.CTRL01.AR02}
+    result: Passed
+    message: ""
+    start: "2026-11-24T09:29:27+01:00"

@@ -6,7 +6,7 @@ metadata:
   id: RSC.CMT.MAP.NIST
   type: MappingDocument
   gemara-version: "1.0.0"
-  description: Maps RSC.CMT.CTRL01's AR01/AR02 to the NIST 800-53 controls KSI-CMT-VTD/LMC reference.
+  description: Maps RSC.CMT.CTRL01's AR01/AR02 and RSC.CMT.CTRL02's AR01 to the NIST 800-53 controls KSI-CMT-VTD/LMC reference.
   version: 0.1.0
   author:
     id: rosa-seaplane-compliance
@@ -20,7 +20,7 @@ metadata:
     - id: fedramp-sp800-53-guidance
       title: "NIST SP 800-53 Rev 5 — FedRAMP KSI-Referenced Controls"
       version: "5.2.0"
-      url: mappings/vendor/fedramp/layer1-fedramp-sp80053.yaml
+      url: https://github.com/openshift-online/rosa-seaplane-compliance/blob/main/mappings/vendor/fedramp/layer1-fedramp-sp80053.yaml
 
 source-reference:
   reference-id: RSC.CMT.CTRL
@@ -54,3 +54,23 @@ mappings:
       - entry-id: "CM-03 (01)"
         strength: 5
         rationale: Automated record of configuration changes via merge history.
+
+  - id: RSC.CMT.MAP.NIST.M03
+    source: RSC.CMT.CTRL02.AR01
+    relationship: supports
+    targets:
+      - entry-id: "AU-02"
+        strength: 6
+        rationale: The audit log is on in each region checked and records the management events (changes to the environment) that are logged.
+
+  # RSC.CMT.CTRL03.AR02 (deployed applications are synchronized and healthy) is deliberately
+  # not mapped to an 800-53 control here. CM-03(02) asks for testing and validation BEFORE a
+  # change is finalized, and this check runs after deployment; CM-03 is already evidenced by
+  # M04 for the deployment itself. Revisit if the team reads the controls differently.
+  - id: RSC.CMT.MAP.NIST.M04
+    source: RSC.CMT.CTRL03.AR01
+    relationship: supports
+    targets:
+      - entry-id: "CM-03"
+        strength: 4
+        rationale: Confirms that approved changes were implemented in the environment by the automated pipeline, and that the implementation succeeded.

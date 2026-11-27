@@ -1,0 +1,54 @@
+title: ROSA Seaplane Identity and Access Controls -> NIST SP 800-53
+# Schema: #MappingDocument. Control IDs and casing match
+# mappings/vendor/fedramp/layer1-fedramp-sp80053.yaml (fedramp-sp800-53-guidance
+# v5.2.0) exactly, e.g. "CM-03", "CM-03 (01)"; not consumed by complyctl.
+metadata:
+  id: RSC.IAM.MAP.NIST
+  type: MappingDocument
+  gemara-version: "1.0.0"
+  description: Maps RSC.IAM.CTRL01's AR01 to the NIST 800-53 controls KSI-IAM-SNU references that it evidences.
+  version: 0.1.0
+  author:
+    id: rosa-seaplane-compliance
+    name: ROSA Seaplane Compliance
+    type: Human
+  mapping-references:
+    - id: RSC.IAM.CTRL
+      title: ROSA Seaplane Identity and Access Control Catalog
+      version: "0.1.0"
+      url: https://github.com/openshift-online/rosa-seaplane-compliance/blob/main/gemara/identity-access/controls.yaml
+    - id: fedramp-sp800-53-guidance
+      title: "NIST SP 800-53 Rev 5 — FedRAMP KSI-Referenced Controls"
+      version: "5.2.0"
+      url: https://github.com/openshift-online/rosa-seaplane-compliance/blob/main/mappings/vendor/fedramp/layer1-fedramp-sp80053.yaml
+
+source-reference:
+  reference-id: RSC.IAM.CTRL
+  entry-type: AssessmentRequirement
+target-reference:
+  reference-id: fedramp-sp800-53-guidance
+  entry-type: Control
+
+mappings:
+  - id: RSC.IAM.MAP.NIST.M01
+    source: RSC.IAM.CTRL01.AR01
+    relationship: supports
+    targets:
+      - entry-id: "AC-02"
+        strength: 6
+        rationale: >
+          The credential inventory is a per-account listing of principals and the
+          state of their credentials, which is the account-management record this
+          control asks for, checked against a rule about standing credentials.
+
+  - id: RSC.IAM.MAP.NIST.M02
+    source: RSC.IAM.CTRL01.AR02
+    relationship: supports
+    targets:
+      - entry-id: "AC-02"
+        strength: 5
+        rationale: >
+          Monitoring how accounts are used is part of account management: this
+          reports which principals actually authenticated with a standing
+          credential, from the audit log, within the window. It covers only
+          principals whose credentials still exist.

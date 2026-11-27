@@ -1,0 +1,57 @@
+# Which KSIs this phase builds, by how automatable they are.
+#
+# This is a judgment call from the KSI statements; revisit a KSI's bucket if its
+# design shows otherwise.
+#   automatable: fully machine-checkable
+#   hybrid:      machine evidence plus human judgment; the machine-checkable
+#                part is in scope
+#   process:     human process, deferred (not exempt)
+automatable:
+  - KSI-CMT-LMC
+  - KSI-CMT-RMV
+  - KSI-CMT-VTD
+  - KSI-CNA-DFP
+  - KSI-CNA-EIS
+  - KSI-CNA-IBP
+  - KSI-CNA-MAT
+  - KSI-CNA-OFA
+  - KSI-CNA-RNT
+  - KSI-CNA-ULN
+  - KSI-IAM-AAM
+  - KSI-IAM-APM
+  - KSI-IAM-ELP
+  - KSI-IAM-JIT
+  - KSI-IAM-SNU
+  - KSI-MLA-ALA
+  - KSI-MLA-EVC
+  - KSI-MLA-LET
+  - KSI-MLA-OSM
+  - KSI-PIY-GIV
+  - KSI-SCR-MON
+  - KSI-SVC-ACM
+  - KSI-SVC-ASM
+  - KSI-SVC-SIN
+  - KSI-SVC-VCM
+  - KSI-SVC-VRI
+hybrid:
+  - KSI-CNA-RVP
+  - KSI-IAM-SUS
+  - KSI-MLA-RVL
+  - KSI-RPL-ABO
+  - KSI-RPL-TRC
+  - KSI-SCR-MIT
+  - KSI-SVC-EIS
+  - KSI-SVC-PRR
+  - KSI-SVC-RUD
+process:
+  - KSI-CED-RAT
+  - KSI-CMT-RVP
+  - KSI-INR-AAR
+  - KSI-INR-RIR
+  - KSI-INR-RPI
+  - KSI-PIY-RES
+  - KSI-PIY-RIS
+  - KSI-PIY-RSD
+  - KSI-PIY-RVD
+  - KSI-RPL-ARP
+  - KSI-RPL-RRO

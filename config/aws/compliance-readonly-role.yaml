@@ -1,0 +1,62 @@
+# The read-only IAM role the compliance checks use against AWS, and every
+# permission it needs, each with the check that needs it. This file is the single
+# source of truth. It is applied by scripts/aws_readonly_role.py for now, and is
+# meant to move into the platform's Terraform (rosa-seaplane) once the set of
+# permissions is final: translate this file, do not re-derive it.
+#
+# NEVER put account IDs or ARNs containing them in this file (the repo is public).
+# The trust policy below is written without one; the script fills in the account
+# at apply time from the credentials it runs with.
+role-name: rosa-seaplane-compliance-readonly
+description: Read-only access for automated compliance evidence collection.
+# Chained role sessions are capped at one hour by AWS.
+max-session-seconds: 3600
+
+# Who may assume the role: any principal of the same account that is itself allowed
+# to call sts:AssumeRole (so an account administrator, not anonymous or external
+# principals). Tighten to a named role when this moves into Terraform.
+trust: same-account
+
+tags:
+  purpose: compliance-evidence-readonly
+  managed-by: rosa-seaplane-compliance
+  lifecycle: temporary-until-in-platform-terraform
+
+# AWS-managed policies attached as they are.
+managed-policies:
+  - arn: arn:aws:iam::aws:policy/SecurityAudit
+    needed-by:
+      - KSI-IAM-SNU configuration method (IAM credential report / users and access keys)
+      - Prowler trial (task 6.2) and the other AWS-backed KSIs it may serve
+  - arn: arn:aws:iam::aws:policy/job-function/ViewOnlyAccess
+    needed-by:
+      - Prowler trial (task 6.2): resource inventory for configuration checks
+
+# Permissions added explicitly, so the need is recorded even where a managed policy
+# above already grants it. Read-only actions only.
+actions:
+  - action: iam:GenerateCredentialReport
+    needed-by: KSI-IAM-SNU configuration method (no IAM user has an active access key)
+  - action: iam:GetCredentialReport
+    needed-by: KSI-IAM-SNU configuration method (no IAM user has an active access key)
+  - action: cloudtrail:LookupEvents
+    needed-by: KSI-IAM-SNU behavior method (no non-user principal authenticated with a long-term key)
+  # The behavior method (RSC.IAM.CTRL01.AR02) finds each existing key, asks the audit log
+  # about it, and cross-checks IAM's own last-used record. SecurityAudit already grants
+  # these; they are listed so the need is on record.
+  - action: iam:ListUsers
+    needed-by: KSI-IAM-SNU behavior method (find the IAM users whose keys to look up)
+  - action: iam:ListAccessKeys
+    needed-by: KSI-IAM-SNU behavior method (find each user's active and inactive access keys)
+  - action: iam:GetAccessKeyLastUsed
+    needed-by: KSI-IAM-SNU behavior method (cross-check each key's last use against the audit log)
+  - action: iam:GetAccountSummary
+    needed-by: KSI-IAM-SNU behavior method (does the root user have any access key)
+  - action: codepipeline:ListPipelineExecutions
+    needed-by: Post-merge deployment method for KSI-CMT-VTD (did the latest pipeline execution succeed)
+  - action: codepipeline:GetPipelineExecution
+    needed-by: Post-merge deployment method for KSI-CMT-VTD (which commit an execution applied)
+  - action: codepipeline:GetPipelineState
+    needed-by: Post-merge deployment method for KSI-CMT-VTD (is an execution in progress)
+  - action: codepipeline:ListActionExecutions
+    needed-by: Post-merge deployment method for KSI-CMT-VTD (read the applied-commit output variable of the Apply step)

@@ -1,6 +1,6 @@
 title: ROSA Seaplane Change Management Controls -> FedRAMP KSI
 # Schema: #MappingDocument. Not consumed by complyctl, used by
-# scripts/generate_rtm.py and scripts/coverage.py. KSI ids/version match
+# scripts/coverage.py. KSI ids/version match
 # mappings/vendor/fedramp/layer2-fedramp-ksi.yaml (fedramp-ksi-controls
 # v2026.1.0); re-sync from there if it moves on.
 metadata:
@@ -21,7 +21,7 @@ metadata:
     - id: fedramp-ksi-controls
       title: "FedRAMP 2026 Key Security Indicators — Class C Controls"
       version: "2026.1.0"
-      url: mappings/vendor/fedramp/layer2-fedramp-ksi.yaml
+      url: https://github.com/openshift-online/rosa-seaplane-compliance/blob/main/mappings/vendor/fedramp/layer2-fedramp-ksi.yaml
 
 source-reference:
   reference-id: RSC.CMT.CTRL
@@ -49,3 +49,48 @@ mappings:
       - entry-id: KSI-CMT-LMC
         strength: 7
         rationale: The per-merge review/status-check trail is the monitored record of modifications.
+
+  - id: RSC.CMT.MAP.KSI.M03
+    source: RSC.CMT.CTRL02.AR01
+    relationship: supports
+    targets:
+      - entry-id: KSI-CMT-LMC
+        strength: 6
+        rationale: >
+          Confirms that each in-scope account's audit log is on in every region
+          checked and records management write events (where modifications to
+          the environment appear), and that an alert exists for the logging itself
+          being stopped or altered. This is the configuration half of logging and
+          monitoring modifications. It does not cover alerts on other kinds of
+          change, or whether anyone responds to an alert.
+
+  - id: RSC.CMT.MAP.KSI.M04
+    source: RSC.CMT.CTRL03.AR01
+    relationship: supports
+    targets:
+      - entry-id: KSI-CMT-VTD
+        strength: 6
+        rationale: >
+          Extends the validation of changes past the merge. It confirms that each
+          merged change was applied to the environment by the automated deployment
+          pipeline, that the pipeline finished successfully (the regional pipeline
+          also waits for the platform API to be live), and that the environment is
+          running the head of the branch. The health of the deployed workloads
+          afterwards, which the pipeline does not wait for, is checked separately
+          (RSC.CMT.CTRL03.AR02).
+
+  - id: RSC.CMT.MAP.KSI.M05
+    source: RSC.CMT.CTRL03.AR02
+    relationship: supports
+    targets:
+      - entry-id: KSI-CMT-VTD
+        strength: 6
+        rationale: >
+          Validates changes throughout deployment, past the pipeline's own finish.
+          After a deployment, it confirms that the applications that make up each
+          cluster are synchronized with their desired state and healthy, using the
+          state the deployment tool reports, and it fails when an application stays
+          unhealthy, out of sync or never settles for a sustained period (30
+          minutes by default). A state that is transient while a rollout settles
+          is tolerated. It depends on the platform's metrics being recent and
+          complete, and treats anything else as "could not tell", never as healthy.

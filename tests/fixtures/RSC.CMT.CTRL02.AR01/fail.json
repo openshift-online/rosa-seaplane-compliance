@@ -1,0 +1,46 @@
+{
+  "assessment_requirement": "RSC.CMT.CTRL02.AR01",
+  "generated_at": "2026-10-01T00:00:00Z",
+  "target": "regional",
+  "target_type": "aws_accounts",
+  "collection": {
+    "complete": true,
+    "source": "prowler",
+    "prowler_version": "5.52.0",
+    "required_checks": [
+      "cloudtrail_multi_region_enabled",
+      "cloudtrail_multi_region_enabled_logging_management_events",
+      "cloudwatch_log_metric_filter_and_alarm_for_cloudtrail_configuration_changes_enabled"
+    ],
+    "regions": [
+      "us-east-1"
+    ],
+    "generated_at": "2026-10-01T00:00:00Z"
+  },
+  "findings": [
+    {
+      "check_id": "cloudtrail_multi_region_enabled",
+      "status": "FAIL",
+      "region": "us-east-1",
+      "resource_type": "Other",
+      "resource_name": "<unknown>",
+      "detail": "No CloudTrail trails enabled with logging were found."
+    },
+    {
+      "check_id": "cloudtrail_multi_region_enabled_logging_management_events",
+      "status": "FAIL",
+      "region": "us-east-1",
+      "resource_type": "Other",
+      "resource_name": "<unknown>",
+      "detail": "No CloudTrail trails enabled and logging management events were found."
+    },
+    {
+      "check_id": "cloudwatch_log_metric_filter_and_alarm_for_cloudtrail_configuration_changes_enabled",
+      "status": "FAIL",
+      "region": "us-east-1",
+      "resource_type": "Other",
+      "resource_name": "<unknown>",
+      "detail": "No CloudWatch log groups found with metric filters or alarms associated."
+    }
+  ]
+}

@@ -3,12 +3,12 @@ title: ROSA Seaplane Change Management Policy
 #
 # evaluation-methods[0].executor.id routes each assessment-plan to a
 # provider by evaluator ID (= provider binary name minus
-# "complyctl-provider-"). Must be exactly "ampel" / "opa".
+# "complyctl-provider-"). Must be exactly "opa".
 metadata:
   id: RSC.CMT.POL01
   type: Policy
   gemara-version: "1.0.0"
-  description: Binds RSC.CMT.CTRL to rosa-seaplane; routes AR01 to ampel, AR02 to opa.
+  description: Binds RSC.CMT.CTRL to rosa-seaplane; routes AR01 and AR02 to opa.
   version: 0.1.0
   author:
     id: rosa-seaplane-compliance
@@ -33,6 +33,7 @@ scope:
     technologies:
       - GitHub
       - OpenShift Prow
+      - AWS CloudTrail
 
 imports:
   catalogs:
@@ -48,12 +49,57 @@ adherence:
           type: Intent
           mode: Automated
           required: true
-          description: ampel checks branch-protection config via builtin:github/branch-rules.yaml.
+          description: opa/conftest evaluates the default branch's protection config against github_default_branch_protection.rego.
           executor:
-            id: ampel
-            name: ampel-provider
+            id: opa
+            name: opa-provider
             type: Software
-            uri: https://github.com/complytime/complytime-providers/tree/main/cmd/ampel-provider
+            uri: https://github.com/complytime/complytime-providers/tree/main/cmd/opa-provider
+
+    - id: RSC.CMT.POL01.AP03
+      requirement-id: RSC.CMT.CTRL02.AR01
+      frequency: daily
+      evaluation-methods:
+        - id: RSC.CMT.POL01.AP03.EM01
+          type: Intent
+          mode: Automated
+          required: true
+          description: opa/conftest evaluates each account's audit-logging findings (collected with Prowler, config/prowler/checks.yaml) against prowler_account_change_logging.rego.
+          executor:
+            id: opa
+            name: opa-provider
+            type: Software
+            uri: https://github.com/complytime/complytime-providers/tree/main/cmd/opa-provider
+
+    - id: RSC.CMT.POL01.AP04
+      requirement-id: RSC.CMT.CTRL03.AR01
+      frequency: daily
+      evaluation-methods:
+        - id: RSC.CMT.POL01.AP04.EM01
+          type: Behavioral
+          mode: Automated
+          required: true
+          description: opa/conftest evaluates each deployment pipeline's execution history against the merged changes (collected from the pipeline and the repository) with deployment_applied.rego.
+          executor:
+            id: opa
+            name: opa-provider
+            type: Software
+            uri: https://github.com/complytime/complytime-providers/tree/main/cmd/opa-provider
+
+    - id: RSC.CMT.POL01.AP05
+      requirement-id: RSC.CMT.CTRL03.AR02
+      frequency: daily
+      evaluation-methods:
+        - id: RSC.CMT.POL01.AP05.EM01
+          type: Behavioral
+          mode: Automated
+          required: true
+          description: opa/conftest evaluates, for each cluster, whether the deployed applications were synchronized and healthy (collected from the deployment tool's metrics) with deployment_workloads_healthy.rego.
+          executor:
+            id: opa
+            name: opa-provider
+            type: Software
+            uri: https://github.com/complytime/complytime-providers/tree/main/cmd/opa-provider
 
     - id: RSC.CMT.POL01.AP02
       requirement-id: RSC.CMT.CTRL01.AR02

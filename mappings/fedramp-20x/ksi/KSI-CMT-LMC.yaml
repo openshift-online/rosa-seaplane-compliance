@@ -1,0 +1,18 @@
+# KSI record for KSI-CMT-LMC: the hand-written input to the SDR that cannot be derived
+# from the mappings, policy or scan results. Written by the engineer who
+# implements the KSI's checks, in the same PR, and reviewed by a person.
+# Leave a field empty until it is true; never write placeholder claims.
+ksi: KSI-CMT-LMC
+# Its methods reach different targets (GitHub repositories, AWS accounts); coverage
+# takes what each method must reach from the AR itself.
+target-types: [github-repository, aws-account]
+measures: ""
+automation-verification: ""
+validation: ""
+# A related control is "addressed" when one of the KSI's ARs maps to it, and
+# "open" unless decided here. Each decision needs a rationale:
+#   control-decisions:
+#     ca-7.4:
+#       decision: not-applicable   # or: inherited
+#       rationale: Why this control does not apply to this KSI.
+control-decisions: {}

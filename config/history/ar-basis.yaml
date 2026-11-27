@@ -1,0 +1,45 @@
+# What each assessment requirement (AR) judges, for the daily history.
+#
+# The history is partitioned by UTC day: a record is about one day D, the half-open
+# interval [D 00:00:00Z, D+1 00:00:00Z). An AR either judges
+#
+#   event   items that carry a timestamp inside the day (PR merges, key-usage events,
+#           pipeline executions). They can be collected honestly for any past day, so a
+#           backfill for a missed day gives real results for them.
+#   state   the present, at collection time (gate configuration, which IAM keys exist,
+#           logging configuration, application health). The past state of a system cannot
+#           be reconstructed, so a backfill NEVER uses today's state as that day's: its
+#           result for that day is `not_collected`. Anything else would be a result
+#           rewritten after the fact.
+#
+# An `event` AR may also contain rules that read the present (`state_rules`, rule ids from
+# config/findings/rules.yaml). A backfill ignores those rules for that AR and a normal run
+# judges them. A test requires every AR in the policies to be declared here, and nothing else.
+RSC.CMT.CTRL01.AR01:
+  basis: state
+  note: The default branch's protection and the merge bot's configuration as they are when collected.
+RSC.CMT.CTRL01.AR02:
+  basis: event
+  note: Pull requests merged inside the day, with the approvals and required checks they had.
+RSC.CMT.CTRL02.AR01:
+  basis: state
+  note: Whether change logging is configured and monitored when collected (Prowler checks of the present).
+RSC.CMT.CTRL03.AR01:
+  basis: event
+  note: >
+    Changes merged inside the day and the pipeline executions that applied them. Three rules read the
+    present (is the head of the branch running now, and is the latest run failed or stuck); a backfill
+    must not judge them.
+  state_rules:
+    - deployment.head-not-deployed
+    - deployment.latest-execution-failed
+    - deployment.latest-execution-stuck
+RSC.CMT.CTRL03.AR02:
+  basis: state
+  note: Application health at collection time, with a short look back from that moment.
+RSC.IAM.CTRL01.AR01:
+  basis: state
+  note: Which credentials exist and are active when the credential report is taken.
+RSC.IAM.CTRL01.AR02:
+  basis: event
+  note: Authentication events inside the day, found through the keys that exist when collected.

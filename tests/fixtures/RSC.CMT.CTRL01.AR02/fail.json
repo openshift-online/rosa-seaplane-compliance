@@ -1,32 +1,176 @@
 {
+  "assessment_requirement": "RSC.CMT.CTRL01.AR02",
   "generated_at": "2026-10-01T00:00:00Z",
   "repository": "openshift-online/rosa-seaplane",
   "base_ref": "main",
-  "window_days": 30,
+  "covers_date": "2026-09-25",
+  "window": {
+    "start": "2026-09-25T00:00:00Z",
+    "end": "2026-09-26T00:00:00Z"
+  },
+  "branch_protected": true,
+  "check_runs_readable": true,
+  "required_contexts": [
+    "ci/build",
+    "ci/lint"
+  ],
   "pull_requests": [
     {
       "number": 301,
-      "merged_at": "2026-09-28T12:00:00Z",
+      "merged_at": "2026-09-25T08:00:00Z",
       "author": "alice",
-      "merged_by": "bob",
-      "review_decision": "REVIEW_REQUIRED",
-      "status_check_state": "SUCCESS"
+      "author_is_bot": false,
+      "automated_change": {
+        "author_allowlisted": false,
+        "gate_defined": false,
+        "gate_labels_present": true,
+        "merged_by_merge_automation": true,
+        "all_commits_by_author": true
+      },
+      "merged_by": "openshift-merge-bot",
+      "approved_by": [
+        "alice"
+      ],
+      "approval_sources": [
+        "prow"
+      ],
+      "history_truncated": false,
+      "status_check_state": "SUCCESS",
+      "required_checks": [
+        {
+          "context": "ci/build",
+          "result": "success"
+        },
+        {
+          "context": "ci/lint",
+          "result": "success"
+        }
+      ],
+      "checks_complete": false
     },
     {
       "number": 302,
-      "merged_at": "2026-09-29T09:30:00Z",
+      "merged_at": "2026-09-25T09:00:00Z",
       "author": "carol",
-      "merged_by": "carol",
-      "review_decision": "APPROVED",
-      "status_check_state": "SUCCESS"
+      "author_is_bot": false,
+      "automated_change": {
+        "author_allowlisted": false,
+        "gate_defined": false,
+        "gate_labels_present": true,
+        "merged_by_merge_automation": true,
+        "all_commits_by_author": true
+      },
+      "merged_by": "dave",
+      "approved_by": [],
+      "approval_sources": [],
+      "history_truncated": false,
+      "status_check_state": "SUCCESS",
+      "required_checks": [
+        {
+          "context": "ci/build",
+          "result": "missing"
+        },
+        {
+          "context": "ci/lint",
+          "result": "neutral"
+        }
+      ],
+      "checks_complete": true
     },
     {
       "number": 303,
-      "merged_at": "2026-09-30T15:45:00Z",
+      "merged_at": "2026-09-25T10:00:00Z",
       "author": "erin",
-      "merged_by": "frank",
-      "review_decision": "APPROVED",
-      "status_check_state": "FAILURE"
+      "author_is_bot": false,
+      "automated_change": {
+        "author_allowlisted": false,
+        "gate_defined": false,
+        "gate_labels_present": true,
+        "merged_by_merge_automation": true,
+        "all_commits_by_author": true
+      },
+      "merged_by": "erin",
+      "approved_by": [
+        "frank"
+      ],
+      "approval_sources": [
+        "github-review"
+      ],
+      "history_truncated": false,
+      "status_check_state": "SUCCESS",
+      "required_checks": [
+        {
+          "context": "ci/build",
+          "result": "success"
+        },
+        {
+          "context": "ci/lint",
+          "result": "pending"
+        }
+      ],
+      "checks_complete": true
+    },
+    {
+      "number": 304,
+      "merged_at": "2026-09-25T12:00:00Z",
+      "author": "gina",
+      "author_is_bot": false,
+      "automated_change": {
+        "author_allowlisted": false,
+        "gate_defined": false,
+        "gate_labels_present": true,
+        "merged_by_merge_automation": true,
+        "all_commits_by_author": true
+      },
+      "merged_by": "openshift-merge-bot",
+      "approved_by": [
+        "hank"
+      ],
+      "approval_sources": [
+        "prow"
+      ],
+      "history_truncated": false,
+      "status_check_state": "FAILURE",
+      "required_checks": [
+        {
+          "context": "ci/build",
+          "result": "failure"
+        },
+        {
+          "context": "ci/lint",
+          "result": "success"
+        }
+      ],
+      "checks_complete": true
+    },
+    {
+      "number": 305,
+      "merged_at": "2026-09-25T13:00:00Z",
+      "author": "dep-bot",
+      "author_is_bot": true,
+      "automated_change": {
+        "author_allowlisted": true,
+        "gate_defined": true,
+        "gate_labels_present": true,
+        "merged_by_merge_automation": false,
+        "all_commits_by_author": true
+      },
+      "merged_by": "dep-bot",
+      "approved_by": [],
+      "approval_sources": [],
+      "history_truncated": false,
+      "status_check_state": "SUCCESS",
+      "required_checks": [
+        {
+          "context": "ci/build",
+          "result": "success"
+        },
+        {
+          "context": "ci/lint",
+          "result": "success"
+        }
+      ],
+      "checks_complete": true
     }
   ]
 }

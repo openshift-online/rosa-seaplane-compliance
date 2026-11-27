@@ -1,0 +1,452 @@
+{
+  "ars": {
+    "FAKE.A.CTRL01.AR01": {
+      "applicability": [
+        "aws_accounts"
+      ],
+      "control": "FAKE.A.CTRL01",
+      "domain": "dom-a",
+      "fails_when": null,
+      "failure_handling": null,
+      "id": "FAKE.A.CTRL01.AR01",
+      "impl": {
+        "collector": "evidence/FAKE.A.CTRL01.AR01.sh",
+        "evaluator": "opa",
+        "fixtures": {
+          "fail": true,
+          "pass": true
+        },
+        "platform": "fake-platform",
+        "rego_file": "opa/dom-a/policy/locked.rego",
+        "rego_package": "fake.dom_a.locked",
+        "rego_test_file": "opa/dom-a/policy/locked_test.rego",
+        "schema": "schemas/fake.cue"
+      },
+      "implementation_state": "Implemented",
+      "implemented": true,
+      "missing": {
+        "by_requirement": {
+          "fedramp-ksi-controls:KSI-CMT-VTD": [
+            "reach all targets"
+          ]
+        },
+        "own": [
+          "reach 2 target(s) not collected: acct-two, acct-three"
+        ]
+      },
+      "plan": {
+        "description": "Evaluates FAKE.A.CTRL01.AR01.",
+        "executor": "opa",
+        "executor_name": "opa-provider",
+        "frequency": "weekly",
+        "id": "PLAN.FAKE.A.CTRL01.AR01",
+        "method": "PLAN.FAKE.A.CTRL01.AR01.EM01",
+        "mode": "Automated",
+        "policy_file": "gemara/dom-a/policy.yaml",
+        "required": true,
+        "type": "Behavioral"
+      },
+      "requirements": [
+        "fedramp-ksi-controls:KSI-CMT-VTD",
+        "fedramp-sp800-53-guidance:cm-3",
+        "fedramp-sp800-53-guidance:cm-3.2",
+        "other-cert:OC-REQ-9"
+      ],
+      "state": "Active",
+      "text": "Accounts must be locked down. <script>alert(1)</script>",
+      "what_it_checks": "Evaluates FAKE.A.CTRL01.AR01."
+    },
+    "FAKE.A.CTRL01.AR02": {
+      "applicability": [
+        "aws_accounts"
+      ],
+      "control": "FAKE.A.CTRL01",
+      "domain": "dom-a",
+      "fails_when": null,
+      "failure_handling": null,
+      "id": "FAKE.A.CTRL01.AR02",
+      "impl": null,
+      "implementation_state": "Not implemented",
+      "implemented": false,
+      "missing": {
+        "by_requirement": {},
+        "own": [
+          "no automated evaluation method in the policy yet",
+          "not mapped to any requirement",
+          "run the checks (make run-local): no collector manifest yet",
+          "no scan result yet (make run-local)"
+        ]
+      },
+      "plan": null,
+      "requirements": [],
+      "state": "Active",
+      "text": "A second requirement with no plan yet.",
+      "what_it_checks": null
+    },
+    "FAKE.B.CTRL07.AR01": {
+      "applicability": [
+        "vpcs"
+      ],
+      "control": "FAKE.B.CTRL07",
+      "domain": "dom-b",
+      "fails_when": null,
+      "failure_handling": null,
+      "id": "FAKE.B.CTRL07.AR01",
+      "impl": {
+        "collector": "evidence/FAKE.B.CTRL07.AR01.sh",
+        "evaluator": "opa",
+        "fixtures": {
+          "fail": true,
+          "pass": true
+        },
+        "platform": "fake-platform",
+        "rego_file": "opa/dom-b/policy/closed.rego",
+        "rego_package": "fake.dom_b.closed",
+        "rego_test_file": "opa/dom-b/policy/closed_test.rego",
+        "schema": "schemas/fake.cue"
+      },
+      "implementation_state": "Implemented",
+      "implemented": true,
+      "missing": {
+        "by_requirement": {
+          "fedramp-ksi-controls:KSI-CMT-VTD": [
+            "reach all targets"
+          ]
+        },
+        "own": [
+          "run the checks (make run-local): no collector manifest yet",
+          "no scan result yet (make run-local)"
+        ]
+      },
+      "plan": {
+        "description": "Evaluates FAKE.B.CTRL07.AR01.",
+        "executor": "opa",
+        "executor_name": "opa-provider",
+        "frequency": "daily",
+        "id": "PLAN.FAKE.B.CTRL07.AR01",
+        "method": "PLAN.FAKE.B.CTRL07.AR01.EM01",
+        "mode": "Automated",
+        "policy_file": "gemara/dom-b/policy.yaml",
+        "required": true,
+        "type": "Behavioral"
+      },
+      "requirements": [
+        "fedramp-ksi-controls:KSI-CMT-VTD",
+        "fedramp-sp800-53-guidance:sc-7"
+      ],
+      "state": "Active",
+      "text": "Networks must be closed.",
+      "what_it_checks": "Evaluates FAKE.B.CTRL07.AR01."
+    }
+  },
+  "controls": {
+    "FAKE.A.CTRL01": {
+      "ars": [
+        "FAKE.A.CTRL01.AR01",
+        "FAKE.A.CTRL01.AR02"
+      ],
+      "catalog_file": "gemara/dom-a/controls.yaml",
+      "domain": "dom-a",
+      "group": "dom-a",
+      "id": "FAKE.A.CTRL01",
+      "objective": "Keep things true.",
+      "title": "Control FAKE.A.CTRL01"
+    },
+    "FAKE.B.CTRL07": {
+      "ars": [
+        "FAKE.B.CTRL07.AR01"
+      ],
+      "catalog_file": "gemara/dom-b/controls.yaml",
+      "domain": "dom-b",
+      "group": "dom-b",
+      "id": "FAKE.B.CTRL07",
+      "objective": "Keep things true.",
+      "title": "Control FAKE.B.CTRL07"
+    }
+  },
+  "frameworks": [
+    {
+      "id": "fedramp-ksi-controls",
+      "mapping_files": [
+        "mappings/a-to-ksi.mapping.yaml"
+      ],
+      "title": "KSIs"
+    },
+    {
+      "id": "fedramp-sp800-53-guidance",
+      "mapping_files": [
+        "mappings/a-to-800-53.mapping.yaml"
+      ],
+      "title": "NIST 800-53"
+    },
+    {
+      "id": "other-cert",
+      "mapping_files": [
+        "mappings/a-to-other.mapping.yaml"
+      ],
+      "title": "Some Other Cert <script>alert(1)</script>"
+    }
+  ],
+  "links": [
+    {
+      "ar": "FAKE.A.CTRL01.AR01",
+      "framework": "fedramp-ksi-controls",
+      "mapping_file": "mappings/a-to-ksi.mapping.yaml",
+      "mapping_id": "M1",
+      "rationale": "why <script>alert(1)</script>",
+      "relationship": "supports",
+      "requirement": "fedramp-ksi-controls:KSI-CMT-VTD",
+      "strength": 6
+    },
+    {
+      "ar": "FAKE.A.CTRL01.AR01",
+      "framework": "fedramp-sp800-53-guidance",
+      "mapping_file": "mappings/a-to-800-53.mapping.yaml",
+      "mapping_id": "N1",
+      "rationale": "Change control.",
+      "relationship": "supports",
+      "requirement": "fedramp-sp800-53-guidance:cm-3",
+      "strength": 5
+    },
+    {
+      "ar": "FAKE.A.CTRL01.AR01",
+      "framework": "fedramp-sp800-53-guidance",
+      "mapping_file": "mappings/a-to-800-53.mapping.yaml",
+      "mapping_id": "N1",
+      "rationale": "Testing of changes.",
+      "relationship": "supports",
+      "requirement": "fedramp-sp800-53-guidance:cm-3.2",
+      "strength": 7
+    },
+    {
+      "ar": "FAKE.A.CTRL01.AR01",
+      "framework": "other-cert",
+      "mapping_file": "mappings/a-to-other.mapping.yaml",
+      "mapping_id": "O1",
+      "rationale": "Another certification's requirement.",
+      "relationship": "supports",
+      "requirement": "other-cert:OC-REQ-9",
+      "strength": 2
+    },
+    {
+      "ar": "FAKE.B.CTRL07.AR01",
+      "framework": "fedramp-ksi-controls",
+      "mapping_file": "mappings/a-to-ksi.mapping.yaml",
+      "mapping_id": "M2",
+      "rationale": "Closed networks limit blast radius.",
+      "relationship": "supports",
+      "requirement": "fedramp-ksi-controls:KSI-CMT-VTD",
+      "strength": 3
+    },
+    {
+      "ar": "FAKE.B.CTRL07.AR01",
+      "framework": "fedramp-sp800-53-guidance",
+      "mapping_file": "mappings/a-to-800-53.mapping.yaml",
+      "mapping_id": "N2",
+      "rationale": "Boundary protection.",
+      "relationship": "supports",
+      "requirement": "fedramp-sp800-53-guidance:sc-7",
+      "strength": 4
+    }
+  ],
+  "meta": {
+    "environment": "integration",
+    "evidence_dir": "evidence/output",
+    "generated_at": "2026-01-02T00:00:00Z",
+    "inputs": [],
+    "scan": {
+      "evaluated_at": "2026-01-01T00:00:00Z",
+      "log_file": ".complytime/scan/evaluation-log-fake-20260101-000000.yaml",
+      "report_file": ".complytime/scan/report-fake-20260101-000000.md"
+    },
+    "schema_version": 1
+  },
+  "requirements": {
+    "fedramp-ksi-controls:KSI-CMT-VTD": {
+      "ars": [
+        "FAKE.A.CTRL01.AR01",
+        "FAKE.B.CTRL07.AR01"
+      ],
+      "control_status": {
+        "cm-3": {
+          "rationale": "FAKE.A.CTRL01.AR01: Change control.",
+          "status": "addressed",
+          "via_ars": [
+            "FAKE.A.CTRL01.AR01"
+          ]
+        },
+        "cm-3.2": {
+          "rationale": "FAKE.A.CTRL01.AR01: Testing of changes.",
+          "status": "addressed",
+          "via_ars": [
+            "FAKE.A.CTRL01.AR01"
+          ]
+        },
+        "cm-4.2": {
+          "rationale": null,
+          "status": "open",
+          "via_ars": []
+        },
+        "si-2": {
+          "rationale": null,
+          "status": "open",
+          "via_ars": []
+        }
+      },
+      "display_id": "KSI-CMT-VTD",
+      "family": "CMT",
+      "framework": "fedramp-ksi-controls",
+      "id": "KSI-CMT-VTD",
+      "kind": "ksi",
+      "methods_implemented": 1,
+      "methods_required": 2,
+      "name": "Validating <script>alert(1)</script>",
+      "next": [
+        "reach all targets"
+      ],
+      "record": {
+        "automation-verification": null,
+        "measures": null,
+        "validation": null
+      },
+      "related": [
+        "cm-3",
+        "cm-3.2",
+        "si-2",
+        "cm-4.2"
+      ],
+      "scope_full": false,
+      "state": "In progress",
+      "statement": "Validate.",
+      "type": "auto"
+    },
+    "fedramp-sp800-53-guidance:cm-3": {
+      "ars": [
+        "FAKE.A.CTRL01.AR01"
+      ],
+      "display_id": "CM-03",
+      "framework": "fedramp-sp800-53-guidance",
+      "id": "cm-3",
+      "kind": "control",
+      "name": null,
+      "statement": null
+    },
+    "fedramp-sp800-53-guidance:cm-3.2": {
+      "ars": [
+        "FAKE.A.CTRL01.AR01"
+      ],
+      "display_id": "CM-03 (02)",
+      "framework": "fedramp-sp800-53-guidance",
+      "id": "cm-3.2",
+      "kind": "control",
+      "name": null,
+      "statement": null
+    },
+    "fedramp-sp800-53-guidance:sc-7": {
+      "ars": [
+        "FAKE.B.CTRL07.AR01"
+      ],
+      "display_id": "SC-07",
+      "framework": "fedramp-sp800-53-guidance",
+      "id": "sc-7",
+      "kind": "control",
+      "name": null,
+      "statement": null
+    },
+    "other-cert:OC-REQ-9": {
+      "ars": [
+        "FAKE.A.CTRL01.AR01"
+      ],
+      "display_id": "OC-REQ-9",
+      "framework": "other-cert",
+      "id": "OC-REQ-9",
+      "kind": "requirement",
+      "name": null,
+      "statement": null
+    }
+  },
+  "results": {
+    "FAKE.A.CTRL01.AR01": {
+      "evaluated_at": "2026-01-01T00:00:00Z",
+      "log_file": ".complytime/scan/evaluation-log-fake-20260101-000000.yaml",
+      "message": "acct-one: PR #1 (mallory) <script>alert(1)</script>",
+      "overall": "failed",
+      "report_file": ".complytime/scan/report-fake-20260101-000000.md"
+    }
+  },
+  "scope": {
+    "FAKE.A.CTRL01.AR01": {
+      "environment": "integration",
+      "expected": [
+        "acct-one",
+        "acct-two",
+        "acct-three"
+      ],
+      "generated_at": "2026-01-01T00:00:00Z",
+      "run": true,
+      "target_type": "aws_accounts",
+      "targets": [
+        {
+          "name": "acct-one",
+          "status": "reached"
+        },
+        {
+          "error": "denied <script>alert(1)</script>",
+          "name": "acct-two",
+          "status": "error"
+        },
+        {
+          "name": "acct-three",
+          "status": "not reached"
+        }
+      ],
+      "automation": {
+        "merged": 12,
+        "automation_exempt": 5,
+        "exemption_approved": false
+      }
+    },
+    "FAKE.A.CTRL01.AR02": {
+      "environment": null,
+      "expected": [
+        "acct-one",
+        "acct-two",
+        "acct-three"
+      ],
+      "generated_at": null,
+      "run": false,
+      "target_type": "aws_accounts",
+      "targets": [
+        {
+          "name": "acct-one",
+          "status": "not run"
+        },
+        {
+          "name": "acct-two",
+          "status": "not run"
+        },
+        {
+          "name": "acct-three",
+          "status": "not run"
+        }
+      ],
+      "automation": null
+    },
+    "FAKE.B.CTRL07.AR01": {
+      "environment": null,
+      "expected": [
+        "vpc-1"
+      ],
+      "generated_at": null,
+      "run": false,
+      "target_type": "vpcs",
+      "targets": [
+        {
+          "name": "vpc-1",
+          "status": "not run"
+        }
+      ],
+      "automation": null
+    }
+  }
+}

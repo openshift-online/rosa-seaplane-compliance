@@ -1,10 +1,5 @@
 # complypack MCP server config for this repo. See INSTALL.md in
 # github.com/complytime/complypack for the full schema.
-#
-# evaluator-id is nominal: RSC.CMT.CTRL01.AR01 is actually evaluated by
-# ampel (builtin:github/branch-rules.yaml), AR02 by opa. complypack.yaml
-# only allows one, so it's set to the Rego-evaluated one (opa); this field
-# isn't read by `mcp serve`, only by `complypack pack`.
 id: io.github.openshift-online.rosa-seaplane-compliance
 evaluator-id: opa
 version: 0.1.0
@@ -12,9 +7,22 @@ version: 0.1.0
 gemara:
   sources:
     - source: file://gemara/change-management/controls.yaml
+    - source: file://gemara/change-management/policy.yaml
+    - source: file://gemara/identity-access/controls.yaml
+    - source: file://gemara/identity-access/policy.yaml
 
 schemas:
   - platform: github-branch-protection
     source: file://schemas/github-branch-protection.cue
   - platform: github-pr-merge-review
     source: file://schemas/github-pr-merge-review.cue
+  - platform: principal-credentials
+    source: file://schemas/principal-credentials.cue
+  - platform: principal-key-usage
+    source: file://schemas/principal-key-usage.cue
+  - platform: prowler-findings
+    source: file://schemas/prowler-findings.cue
+  - platform: deployment-pipeline
+    source: file://schemas/deployment-pipeline.cue
+  - platform: deployment-health
+    source: file://schemas/deployment-health.cue

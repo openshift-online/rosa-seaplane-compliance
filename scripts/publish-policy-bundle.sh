@@ -1,17 +1,18 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Pushes gemara/change-management/{controls,policy}.yaml as one OCI artifact.
+# Pushes gemara/<domain>/{controls,policy}.yaml as one OCI artifact.
 # Requires: oras. Log in first if the target registry needs auth
 # (e.g. `oras login your-registry.example.com`).
 #
 # An "http://" prefix on the ref opts into plain-HTTP (for a local/insecure
 # registry — see docs/credentials.md), mirroring the same convention
 # complyctl itself uses for policies[].url.
-# Usage: ./scripts/publish-policy-bundle.sh <oci-ref>
+# Usage: ./scripts/publish-policy-bundle.sh <domain> <oci-ref>
 
-INPUT_REF="${1:?usage: $0 <oci-ref>}"
-SRC_DIR="$(cd "$(dirname "$0")/../gemara/change-management" && pwd)"
+DOMAIN="${1:?usage: $0 <domain> <oci-ref>}"
+INPUT_REF="${2:?usage: $0 <domain> <oci-ref>}"
+SRC_DIR="$(cd "$(dirname "$0")/../gemara/${DOMAIN}" && pwd)"
 
 REF="${INPUT_REF}"
 ORAS_FLAGS=()

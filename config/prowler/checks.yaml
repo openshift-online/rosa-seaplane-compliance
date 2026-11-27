@@ -1,0 +1,89 @@
+# Which Prowler checks back which assessment requirement, and why.
+#
+# Prowler may judge the facts its checks measure (its PASS/FAIL is the verdict; we
+# do not re-implement it). The one rule: before a check is relied on for a
+# requirement, someone reads what it measures against what the requirement needs.
+# This file is that record. It was written from each check's metadata and code BEFORE
+# any of them was run, and a check is never added or dropped because it passed or
+# failed. The collector reads `checks` from here, and the Rego holds the same list
+# (tests/python/test_prowler_checks.py fails if they drift apart).
+#
+# Prowler is pinned: the collector refuses to run any other version, because a new
+# release can change what a check measures. Upgrade on purpose: read the changed
+# checks, then change this number, the README and the tests together.
+prowler-version: "5.52.0"
+
+assessment-requirements:
+  RSC.CMT.CTRL02.AR01:
+    # What the requirement needs: modifications to the cloud environment are logged,
+    # and monitored. Read against the checks as follows.
+    checks:
+      - id: cloudtrail_multi_region_enabled
+        why: >
+          Every region it audits has at least one audit trail that is logging. Without
+          that, changes made in a region leave no record. This is the "logged" half.
+      - id: cloudtrail_multi_region_enabled_logging_management_events
+        why: >
+          The trail records management events for reads and writes. Modifications to
+          the environment (creating, changing or deleting resources, permissions and
+          settings) are management write events, so this is the check that the
+          modifications themselves are captured, not just that a trail exists.
+      - id: cloudwatch_log_metric_filter_and_alarm_for_cloudtrail_configuration_changes_enabled
+        why: >
+          Someone is alerted if logging itself is stopped or altered (create, update or
+          delete a trail, start or stop logging): without this, "logged" can silently
+          stop. It also requires a trail to deliver to a CloudWatch log group that has a
+          metric filter and an alarm, so it is the evidence that the log feeds a
+          monitoring mechanism. It judges "at least one such filter and alarm exists",
+          which is the right shape for the requirement.
+    considered-and-left-out:
+      - id: cloudtrail_cloudwatch_logging_enabled
+        why: >
+          It judges EVERY trail visible in the account, including organization trails
+          the account does not own, as having to deliver to CloudWatch within 24 hours.
+          The requirement needs the account's logs to reach a monitoring mechanism, an
+          "at least one" fact that the alarm check above already establishes. Judging
+          trails we do not control would fail the account for something outside it.
+      - id: cloudtrail_s3_dataevents_write_enabled
+        why: >
+          Object-level writes in S3 are data operations, not modifications to the cloud
+          environment. Logging them is a data-integrity choice with real cost; the
+          requirement is about changes to the environment, which management events cover.
+      - id: config_recorder_all_regions_enabled
+        why: >
+          The configuration recorder keeps a history of each resource's state. That is
+          valuable but a different capability: the audit trail already records the
+          calls that modify the environment, which is what the requirement states.
+      - id: cloudwatch_changes_to_network_acls_alarm_configured
+        why: Alarm on one change type. See the note on change-type alarms below.
+      - id: cloudwatch_changes_to_network_gateways_alarm_configured
+        why: Alarm on one change type. See the note on change-type alarms below.
+      - id: cloudwatch_changes_to_network_route_tables_alarm_configured
+        why: Alarm on one change type. See the note on change-type alarms below.
+      - id: cloudwatch_changes_to_vpcs_alarm_configured
+        why: Alarm on one change type. See the note on change-type alarms below.
+      - id: cloudwatch_log_metric_filter_and_alarm_for_aws_config_configuration_changes_enabled
+        why: >
+          Alarm on changes to the configuration recorder, which is itself left out above.
+      - id: cloudwatch_log_metric_filter_aws_organizations_changes
+        why: Alarm on one change type. See the note on change-type alarms below.
+      - id: cloudwatch_log_metric_filter_disable_or_scheduled_deletion_of_kms_cmk
+        why: Alarm on one change type. See the note on change-type alarms below.
+      - id: cloudwatch_log_metric_filter_for_s3_bucket_policy_changes
+        why: Alarm on one change type. See the note on change-type alarms below.
+      - id: cloudwatch_log_metric_filter_policy_changes
+        why: Alarm on one change type. See the note on change-type alarms below.
+      - id: cloudwatch_log_metric_filter_security_group_changes
+        why: Alarm on one change type. See the note on change-type alarms below.
+    # Note on change-type alarms: the requirement does not say which kinds of change
+    # must raise an alarm. These checks come from a security benchmark's list of change
+    # types. Requiring all of them would impose that list as if the requirement
+    # said so. A later requirement can add a justified subset (for example IAM policy
+    # and security group changes) once the team decides which changes must alert.
+    does-not-cover:
+      - Alarms on specific kinds of change (network, IAM policy, security groups, storage policy, keys, organization); only an alarm on changes to the logging itself.
+      - Who receives an alarm, whether anyone responds, and whether the alarm has an action. The check only confirms that a filter and an alarm exist.
+      - How fresh the CloudWatch delivery is (the 24 hour delivery check was left out on purpose, see considered-and-left-out above).
+      - Object-level data events, and the history of resource configuration.
+      - Regions other than the ones checked (the environment's regions). A multi-region trail covers them, but only the checked regions are examined.
+      - Modifications made to an account that is not in scope.

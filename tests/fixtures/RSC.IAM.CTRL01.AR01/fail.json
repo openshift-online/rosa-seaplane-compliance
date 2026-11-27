@@ -1,0 +1,61 @@
+{
+  "assessment_requirement": "RSC.IAM.CTRL01.AR01",
+  "generated_at": "2026-10-01T00:00:00Z",
+  "target": "regional",
+  "target_type": "aws-account",
+  "collection": {
+    "complete": true,
+    "source": "iam-credential-report",
+    "generated_at": "2026-10-01T00:00:00Z"
+  },
+  "principals": [
+    {
+      "principal_type": "root",
+      "name": "<root_account>",
+      "credentials": [
+        {
+          "credential_type": "access-key",
+          "long_term": true,
+          "active": false
+        },
+        {
+          "credential_type": "access-key",
+          "long_term": true,
+          "active": false
+        }
+      ]
+    },
+    {
+      "principal_type": "iam-user",
+      "name": "example-automation",
+      "credentials": [
+        {
+          "credential_type": "access-key",
+          "long_term": true,
+          "active": true
+        },
+        {
+          "credential_type": "access-key",
+          "long_term": true,
+          "active": false
+        }
+      ]
+    },
+    {
+      "principal_type": "iam-user",
+      "name": "example-worker",
+      "credentials": [
+        {
+          "credential_type": "access-key",
+          "long_term": true,
+          "active": true
+        },
+        {
+          "credential_type": "access-key",
+          "long_term": true,
+          "active": true
+        }
+      ]
+    }
+  ]
+}

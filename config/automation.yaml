@@ -1,0 +1,33 @@
+# Automation identities whose changes may merge on automation alone.
+#
+# A pull request counts as approved by automation (instead of by a non-author
+# person) only when ALL of these hold, checked by the collector and the AR02
+# policy:
+#   1. the author is listed under `change-authors` below;
+#   2. the repository's merge-bot (Tide) config has a dedicated query for that
+#      author that requires the approval labels, so two independent facts agree;
+#   3. the PR carries those approval labels;
+#   4. it was merged by an identity under `merge-automation`, so the merge gate
+#      ran and a person did not merge it by hand;
+#   5. every commit was authored by that identity and carries a valid signature,
+#      so a person cannot add their own code to a bot's PR and ride the exemption.
+# Required status checks still apply (a failing change is still reported).
+#
+# This is a deliberate exemption from "approval by someone other than the
+# author". Results report how many merges relied on it. Every entry needs a
+# rationale. `approved-by` is who reviewed and accepted the exemption; it is
+# left empty until a person other than the proposer does, and the SDR says so
+# while it is empty. Logins are written without any "[bot]" suffix.
+change-authors:
+  - login: dependabot
+    rationale: Dependency version updates, gated by required CI and the merge bot.
+    approved-by: []
+  - login: red-hat-konflux-kflux-prd-rh02
+    rationale: Konflux build-pipeline and base-image updates, gated by required CI and the merge bot.
+    approved-by: []
+  - login: redhat-chai-bot
+    rationale: Automation account for routine change proposals, gated by required CI and the merge bot.
+    approved-by: []
+merge-automation:
+  - login: openshift-merge-bot
+    rationale: Tide's merge identity; it merges only PRs that satisfy the repository's Tide queries.

@@ -1,0 +1,58 @@
+title: ROSA Seaplane Identity and Access Controls -> FedRAMP KSI
+# Schema: #MappingDocument. Not consumed by complyctl, used by
+# scripts/coverage.py. KSI ids/version match
+# mappings/vendor/fedramp/layer2-fedramp-ksi.yaml (fedramp-ksi-controls
+# v2026.1.0); re-sync from there if it moves on.
+metadata:
+  id: RSC.IAM.MAP.KSI
+  type: MappingDocument
+  gemara-version: "1.0.0"
+  description: Maps RSC.IAM.CTRL01's AR01 to the FedRAMP KSI-IAM indicator it evidences.
+  version: 0.1.0
+  author:
+    id: rosa-seaplane-compliance
+    name: ROSA Seaplane Compliance
+    type: Human
+  mapping-references:
+    - id: RSC.IAM.CTRL
+      title: ROSA Seaplane Identity and Access Control Catalog
+      version: "0.1.0"
+      url: https://github.com/openshift-online/rosa-seaplane-compliance/blob/main/gemara/identity-access/controls.yaml
+    - id: fedramp-ksi-controls
+      title: "FedRAMP 2026 Key Security Indicators — Class C Controls"
+      version: "2026.1.0"
+      url: https://github.com/openshift-online/rosa-seaplane-compliance/blob/main/mappings/vendor/fedramp/layer2-fedramp-ksi.yaml
+
+source-reference:
+  reference-id: RSC.IAM.CTRL
+  entry-type: AssessmentRequirement
+target-reference:
+  reference-id: fedramp-ksi-controls
+  entry-type: Control # layer2-fedramp-ksi.yaml's `controls` entries
+
+mappings:
+  - id: RSC.IAM.MAP.KSI.M01
+    source: RSC.IAM.CTRL01.AR01
+    relationship: supports
+    targets:
+      - entry-id: KSI-IAM-SNU
+        strength: 7
+        rationale: >
+          Inventories every principal in the in-scope accounts and reports any that
+          holds an active long-term credential. This is the configuration half of
+          securing non-user authentication: services should authenticate with
+          short-lived credentials, so a standing key is the thing to find.
+
+  - id: RSC.IAM.MAP.KSI.M02
+    source: RSC.IAM.CTRL01.AR02
+    relationship: supports
+    targets:
+      - entry-id: KSI-IAM-SNU
+        strength: 7
+        rationale: >
+          Looks in each account's audit log for any authentication with a long-term
+          credential in the window, for every key that exists, and cross-checks the
+          account's own record of when each key was last used. This is the behavior
+          half of securing non-user authentication: a standing key that is really
+          being used is the case that matters, and a result that cannot be
+          confirmed is reported, never passed.

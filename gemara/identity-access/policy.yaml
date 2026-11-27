@@ -1,0 +1,70 @@
+title: ROSA Seaplane Identity and Access Policy
+# Schema: #Policy (github.com/gemaraproj/gemara), experimental layer.
+#
+# evaluation-methods[0].executor.id routes each assessment-plan to a
+# provider by evaluator ID (= provider binary name minus
+# "complyctl-provider-"). Must be exactly "opa".
+metadata:
+  id: RSC.IAM.POL01
+  type: Policy
+  gemara-version: "1.0.0"
+  description: Binds RSC.IAM.CTRL to the ROSA Seaplane AWS accounts; routes AR01 and AR02 to opa.
+  version: 0.1.0
+  author:
+    id: rosa-seaplane-compliance
+    name: ROSA Seaplane Compliance
+    type: Human
+  mapping-references:
+    - id: RSC.IAM.CTRL
+      title: ROSA Seaplane Identity and Access Control Catalog
+      version: "0.1.0"
+      url: https://github.com/openshift-online/rosa-seaplane-compliance/blob/main/gemara/identity-access/controls.yaml
+
+contacts:
+  responsible:
+    - name: ROSA Seaplane maintainers
+      social: https://github.com/openshift-online/rosa-seaplane
+  accountable:
+    - name: ROSA Seaplane maintainers
+      social: https://github.com/openshift-online/rosa-seaplane
+
+scope:
+  in:
+    technologies:
+      - AWS IAM
+
+imports:
+  catalogs:
+    - reference-id: RSC.IAM.CTRL
+
+adherence:
+  assessment-plans:
+    - id: RSC.IAM.POL01.AP01
+      requirement-id: RSC.IAM.CTRL01.AR01
+      frequency: daily
+      evaluation-methods:
+        - id: RSC.IAM.POL01.AP01.EM01
+          type: Intent
+          mode: Automated
+          required: true
+          description: opa/conftest evaluates each account's credential inventory against long_term_credentials.rego.
+          executor:
+            id: opa
+            name: opa-provider
+            type: Software
+            uri: https://github.com/complytime/complytime-providers/tree/main/cmd/opa-provider
+
+    - id: RSC.IAM.POL01.AP02
+      requirement-id: RSC.IAM.CTRL01.AR02
+      frequency: daily
+      evaluation-methods:
+        - id: RSC.IAM.POL01.AP02.EM01
+          type: Behavioral
+          mode: Automated
+          required: true
+          description: opa/conftest evaluates each account's key-usage evidence (CloudTrail events per existing key, cross-checked with IAM last-used) against long_term_credential_use.rego.
+          executor:
+            id: opa
+            name: opa-provider
+            type: Software
+            uri: https://github.com/complytime/complytime-providers/tree/main/cmd/opa-provider

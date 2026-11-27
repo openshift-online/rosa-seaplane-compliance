@@ -1,0 +1,13 @@
+{
+  "version": "1",
+  "mappings": [
+    {
+      "id": "rosa_seaplane.identity_access.long_term_credentials",
+      "requirement_id": "RSC.IAM.CTRL01.AR01"
+    },
+    {
+      "id": "rosa_seaplane.identity_access.long_term_credential_use",
+      "requirement_id": "RSC.IAM.CTRL01.AR02"
+    }
+  ]
+}
